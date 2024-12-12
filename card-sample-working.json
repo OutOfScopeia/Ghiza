@@ -1,0 +1,76 @@
+{
+    "type": "message",
+    "attachments": [
+      {
+        "contentType": "application/vnd.microsoft.card.adaptive",
+        "contentUrl": null,
+        "content": {
+          "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+          "type": "AdaptiveCard",
+          "version": "1.3",
+          "body": [
+            {
+              "type": "Container",
+              "id": "ExpenseDetailsWrapper",
+              "isVisible": true,
+              "items": [
+                {
+                  "type": "ColumnSet",
+                  "columns": [
+                    {
+                      "type": "Column",
+                      "items": [
+                          {
+                            "type": "TextBlock",
+                            "horizontalAlignment": "Left",
+                            "text": "23e783f2-104d-44f9-b54d-4a38708a1eac",
+                            "wrap": true,
+                            "size": "Medium"
+                          },
+                          {
+                            "type": "TextBlock",
+                            "horizontalAlignment": "Left",
+                            "text": "00d68429-b54d-492d-104d-4e07d85301bf",
+                            "wrap": true,
+                            "size": "Medium"
+                          }
+                      ],
+                      "width": "200px",
+                      "padding": "None",
+                      "spacing": "None"
+                    },
+                    {
+                      "type": "Column",
+                      "items": [
+                          {
+                            "type": "TextBlock",
+                            "horizontalAlignment": "Left",
+                            "text": "app-name-1",
+                            "wrap": true,
+                            "size": "Medium"
+                          },
+                          {
+                            "type": "TextBlock",
+                            "horizontalAlignment": "Left",
+                            "text": "app-name-2",
+                            "wrap": true,
+                            "size": "Medium"
+                          }
+                      ],
+                      "width": "50px",
+                      "padding": "None",
+                      "spacing": "None"
+                    }
+                  ],
+                  "padding": "None"
+                }
+              ],
+              "padding": "Default",
+              "separator": true,
+              "spacing": "None"
+            }
+          ]
+        }
+      }
+    ]
+  }

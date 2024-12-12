@@ -1,0 +1,23 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+    "TENANT_ID": "<AZURE_TENANT_ID>",
+    "CLIENT_ID": "<AZURE_SERVICE_PRINCIPAL_CLIEND_ID>",
+    "CLIENT_SECRET": "<AZURE_SERVICE_PRINCIPAL_CLIEND_ID>",
+    "WORKSPACE_ID": "<AZURE_LOG_ANALYTICS_WORKSPACE_ID>",
+    "LOOKBACK_MINUTES_SIGNINS": "60",
+    "LOOKBACK_MINUTES_SPCREATIONS": "60",
+    "CRON_SIGNINS": "0 18 * * *",
+    "CRON_CREATED_SERVICE_PRINCIPALS": "0 18 * * *",
+    "CRON_STALE_SERVICE_PRINCIPALS": "0 10 * * 1",
+    "TEAMS_MONITORING_CHANNEL_WEBHOOK": "<URL>",
+    "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK": "<URL>"
+  },
+  "Host": {
+    "LocalHttpPort": 7071,
+    "CORS": "*",
+    "CORSCredentials": false
+  }
+}
