@@ -4,7 +4,6 @@
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
 	<OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
-	<Nullable>enable</Nullable>
 	<Configurations>Debug;Release</Configurations>
   </PropertyGroup>
   <ItemGroup>
