@@ -130,7 +130,8 @@ module JsonUtils =
             | JustText txt                   -> $"""{{"text":"{txt}"}}"""
             | _ -> invalid
 
-    let minify (json:string) = json |> JsonConvert.DeserializeObject |> fun jsn -> JsonConvert.SerializeObject(jsn, Formatting.None)
+    let minify (json:string) =
+        json |> JsonConvert.DeserializeObject |> fun jsn -> JsonConvert.SerializeObject(jsn, Formatting.None)
     
     let getTeamsAdaptiveCardFormat (lTable: LogsTable) (title:string) =
         let seqToList (seq: seq<'T>) : System.Collections.Generic.List<'T> =
@@ -478,7 +479,7 @@ module Funcs =
 
     let time = DateTime.Now
 
-    let postToWebhook (formatted:string) (hook:string) (log:ILogger) =
+    let postToWebhook (log:ILogger) (hook:string) (formatted:string) =
         use _ = log.BeginScope("Posting to webhook")
 
         let formatted = formatted |> JsonUtils.minify
@@ -490,7 +491,7 @@ module Funcs =
             let! response = client.PostAsync(hook, content) |> Async.AwaitTask
             
             match response.IsSuccessStatusCode with
-            |true ->
+            | true ->
                 log.LogInformation ("Successfully posted message to webhook.")
                 return Ok ()
             | false ->
@@ -508,9 +509,9 @@ module Funcs =
             let results =
                 [
                     // Teams
-                    postToWebhook formattedTeams teamsWebhook cfg.Logger
+                    postToWebhook cfg.Logger teamsWebhook formattedTeams
                     // Slack
-                    postToWebhook formattedSlack slackWebhook cfg.Logger
+                    postToWebhook cfg.Logger slackWebhook formattedSlack
                 ]
                 |> Async.Parallel
                 |> Async.RunSynchronously
@@ -572,56 +573,61 @@ let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (context: FunctionConte
     let log = context.GetLogger<LogPoller>()
     let logPrefix = sprintf "[%s]: %s" context.FunctionDefinition.Name
 
-    let formatForTeams (e:Payload.Essentials) = $"ALERT: {e.firedDateTime} - {e.alertRule} - {e.description} - {e.monitorCondition}"
-    
-    let decodeIncomingPayload (req:HttpRequestData) =
+    let getRequestBody (req:HttpRequestData) =
         async {
-            use reader = new StreamReader(req.Body)
-            let! requestBody = reader.ReadToEndAsync() |> Async.AwaitTask
-            
+            try
+                use reader = new StreamReader(req.Body)
+                let! body = reader.ReadToEndAsync() |> Async.AwaitTask
+                return (Ok body)
+            with
+            | ex ->
+                log.LogError($"{ex.Message}" |> logPrefix)
+                return Error ex.Message
+        }
+
+    let getIncomingPayload (body:string) =
+        async {
             let result =
-                match requestBody |> Payload.Essentials.FromCommonAlertSchema with
+                match body |> Payload.Essentials.FromCommonAlertSchema with
                 | Ok es ->
                     log.LogInformation("Successfully parsed incoming payload." |> logPrefix)
                     Ok es
                 | Error e ->
                     Error e
+            
             return result
         }
 
-    let postToHook (formatter:FormatMsg) (r:Result<Payload.Essentials,string>) =
-        async {
-            match r with
-            | Ok p ->
-                let msgJson = $"{{\"text\":\"{p |> formatter}\"}}"
-                use client = new HttpClient()
-                let content = new StringContent(msgJson, Encoding.UTF8, "application/json")
-                let! response = client.PostAsync(teamsWebhook, content) |> Async.AwaitTask
-            
-                match response.IsSuccessStatusCode with
-                |true ->
-                    log.LogInformation ("Successfully posted Teams message to webhook." |> logPrefix)
-                    return Ok ()
-                | false ->
-                    let errorMsg = $"Failed to post message over hook. Status code: {response.StatusCode}"
-                    log.LogError(errorMsg |> logPrefix)
-                    return Error errorMsg
-
-            | Error e ->
-                return Error e
-        }
+    let getOutgoingPayloadTeams (e:Payload.Essentials) =
+        let payload = $"ALERT: {e.firedDateTime} - {e.alertRule} - {e.description} - {e.monitorCondition}"
+        $"{{\"text\":\"{payload}\"}}"
+    
 
     log.LogInformation(sprintf $"F# HttpTrigger function 'AzureAlert' fired at: {DateTime.Now}" |> logPrefix)
 
-    let runAsync formatter req =
+    let runAsync (formatter:FormatMsg) (req:HttpRequestData) =
+        // REFACTOR THIS WITH A CLEARER BRAIN
+        // ACCOMODATE MORE ALERT TYPES - SOME OF THE TEST PAYLOADS ARE NOT POSTING
         async {
-            let! decodedPayload = req |> decodeIncomingPayload
-            let! postedMsg = postToHook formatter decodedPayload
+            match! req |> getRequestBody with
+            | Ok body ->
+                match! body |> getIncomingPayload with
+                | Ok essentials ->
+                    let outPayload = essentials |> formatter
+                    let postedMsgTeams = Funcs.postToWebhook log teamsWebhook outPayload
+                    let postedMsgSlack = Funcs.postToWebhook log slackWebhook outPayload
 
-            match postedMsg with
-            | Ok _ -> ()
-            | Error e -> log.LogError($"Run ended with error: {e}" |> logPrefix)
+                    let! posts = Async.Parallel [ postedMsgTeams; postedMsgSlack]
+
+                    let r =
+                        match posts |> Array.forall (fun r -> r.IsOk) with
+                        | true -> Ok ()
+                        | false -> Error "fr"
+                    return r
+
+                | Error e -> return Error e
+            | Error e -> return Error e
         }
-    
-    runAsync formatForTeams req
+     
+    runAsync getOutgoingPayloadTeams req
     |> Async.RunSynchronously
