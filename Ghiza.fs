@@ -1,6 +1,5 @@
-module CIT.Ghiza
+module Ghiza
 
-open Azure.Identity
 open Azure.Monitor.Query
 open Azure.Monitor.Query.Models
 open Microsoft.Azure.Functions.Worker
@@ -8,7 +7,6 @@ open Microsoft.Azure.Functions.Worker.Http
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
-open Microsoft.Graph
 //open Microsoft.Azure.Functions.Worker.Extensions.Timer
 //open Microsoft.AspNetCore.Server.Kestrel.Core
 open System
@@ -18,20 +16,9 @@ open System.Text
 open Thoth.Json.Net
 open AdaptiveCards
 open Newtonsoft.Json
-
-//let isInLocal = String.IsNullOrEmpty(Environment.GetEnvironmentVariable "WEBSITE_INSTANCE_ID") // if not running in the cloud
-let lookbackMinutesSignIns = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SIGNINS"
-let lookbackMinutesSPCreations = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SPCREATIONS"
-let tenantId = Environment.GetEnvironmentVariable "TENANT_ID"
-let clientId = Environment.GetEnvironmentVariable "CLIENT_ID"
-let clientSecret = Environment.GetEnvironmentVariable "CLIENT_SECRET"
-let workspaceId = Environment.GetEnvironmentVariable "WORKSPACE_ID"
-let teamsWebhook = Environment.GetEnvironmentVariable "TEAMS_MONITORING_CHANNEL_WEBHOOK"
-let slackWebhook = Environment.GetEnvironmentVariable "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK"
-
-let credential = ClientSecretCredential(tenantId, clientId, clientSecret)
-let logsQueryClient = LogsQueryClient(credential)
-let graphClient = new GraphServiceClient(credential)
+open Cfg
+open Domain
+open Slack
 
 let host =
     HostBuilder()
@@ -45,23 +32,6 @@ let host =
         .Build()
 
 host.RunAsync() |> Async.AwaitTask |> Async.RunSynchronously
-
-type LogPoller = Dummy
-
-type Formatters = {
-    TeamsWebhook: LogsTable -> string -> string
-    SlackWebhook: LogsTable -> string -> string
-}
-
-type QueryConfig = {
-    Title: string
-    Query: string
-    Table: LogsTable option
-    QueryTimeRange: TimeSpan
-    Formatters: Formatters
-    Logger: ILogger
-    Message: string
-}
 
 //module HtmlUtils =
 //    let getHtmlTable (tableBkgColor:string) (table: LogsTable) =
@@ -85,51 +55,6 @@ type QueryConfig = {
 //        $"""<p style="color:#EAAA00;"><table border="1" {colgroups}<tr>{columnHeadersHtml}</tr>{rowsHtml}</table></p>"""
 
 module JsonUtils =
-    // Slack UI "domain" - ghetto implementation (illegal template state is very much representable)
-    type MarkDownStyle = {
-        Bold: bool
-        Italics: bool
-        StrikeThrough: bool
-    }
-    with
-        static member Plain        = { Bold = false; Italics = false; StrikeThrough = false }
-        member x.MakeBold          = { x with Bold = true }
-        member x.makeItalics       = { x with Italics = true }
-        member x.MakeStrikeThrough = { x with StrikeThrough = true }
-
-    type TextType =
-        | Plain
-        | Markdown of MarkDownStyle
-        override x.ToString() = match x with Plain -> "plain_text" | Markdown style -> "mrkdwn"
-
-    type Block =
-        | Text of TextType * string
-        | Header of Block
-        | Section of Block list
-        | Blocks of Block list
-        /// No blocks, just plain text
-        | JustText of string
-
-    with
-        override x.ToString() =
-            let invalid = """{"message":"Invalid Block Kit construct."}""" 
-            
-            match x with 
-            | Text (ttype, txt) ->
-                let bold, italic, strike =
-                    match ttype with
-                    | Markdown style -> (if style.Bold then "*" else ""), (if style.Italics then "_" else ""), (if style.StrikeThrough then "~" else "")
-                    | Plain -> "", "", ""
-
-                $"""{{"type":"{ttype}","text":"{strike}{italic}{bold}{txt}{bold}{italic}{strike}"}}"""
-
-            | Header block when block.IsText -> $"""{{"type":"header","text":{block}}}"""
-            | Section (x::[]) when x.IsText  -> $"""{{"type":"section","text":{(x.ToString())}}}"""
-            | Section fields                 -> $"""{{"type":"section","fields":[{(fields |> Seq.map string |> String.concat ",")}]}}"""
-            | Blocks sections                -> $"""{{"blocks":[{(sections |> Seq.map string |> String.concat ",")}]}}"""
-            | JustText txt                   -> $"""{{"text":"{txt}"}}"""
-            | _ -> invalid
-
     let minify (json:string) =
         json |> JsonConvert.DeserializeObject |> fun jsn -> JsonConvert.SerializeObject(jsn, Formatting.None)
     
@@ -233,6 +158,15 @@ module JsonUtils =
             /// +--------------------------------------|-------------|---------------------+
             /// | f45734c3-fea2-4ddf-5f90-7618cad9c0ba | test-sp1    | joe.bloggs@acme.com |
             /// +--------------------------------------|-------------|---------------------+
+
+            // Bluesky link to replies. both forms work, but while the handle can change, did is robust.
+            // https://bsky.app/profile/{handle}/post/3lhtdyygsjk26
+            // https://bsky.app/profile/{did-identifier}/post/3lhtdyygsjk26
+            
+            // examples: 
+            // https://bsky.app/profile/speakezai.bsky.social/post/3lhtdyygsjk26
+            // https://bsky.app/profile/did:plc:igaby4nr77lndu3d3ws2muo3/post/3lhtdyygsjk26
+
             let allRows =
                 seq {
                     yield title
@@ -392,6 +326,30 @@ module ServicePrincipalCreations =
         Message = ""
     }
 
+module SocialsActivityReport =
+    let config (log:ILogger) =
+        
+        use _ = log.BeginScope("Config")
+
+        let time () = DateTime.Now
+
+        let title () = $"{time()} | Social posts activity in the last 1 minute:"
+
+        let tableBkgColor = "Black"
+
+        {
+            Query = String.Empty
+            Title = title()
+            Table = None
+            QueryTimeRange = TimeSpan.FromMinutes(1L)
+            Formatters = {
+                TeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
+                SlackWebhook = JsonUtils.getSlackTableAsCodeBlock
+            }
+            Logger = log
+            Message = ""
+        }
+
 module StaleServicePrincipals =
     // SCRUTINISE THIS
 
@@ -481,9 +439,9 @@ module Funcs =
 
     let postToWebhook (log:ILogger) (hook:string) (formatted:string) =
         use _ = log.BeginScope("Posting to webhook")
-
+        //IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-preminify.json", formatted)
         let formatted = formatted |> JsonUtils.minify
-        //IO.File.WriteAllText ("E:\Ghiza\slack-json-generated.json", formatted)
+        //IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-postminify.json", formatted)
         //log.LogInformation ($"POSTING: {formatted}")
         async {
             use client = new HttpClient()
@@ -509,9 +467,9 @@ module Funcs =
             let results =
                 [
                     // Teams
-                    postToWebhook cfg.Logger teamsWebhook formattedTeams
+                    postToWebhook cfg.Logger teamsAzureAlertsWebhook formattedTeams
                     // Slack
-                    postToWebhook cfg.Logger slackWebhook formattedSlack
+                    postToWebhook cfg.Logger slackAzureAlertsWebhook formattedSlack
                 ]
                 |> Async.Parallel
                 |> Async.RunSynchronously
@@ -535,11 +493,41 @@ module Funcs =
         |> getQueryResult
         |> postToAll
 
+[<Function("SocialsActivityReport")>]
+// Cron expression sourced from app settings: every hour "0 * * * *"
+let runSocialsActivityReport ([<TimerTrigger("%CRON_SOCIALS_ACTIVITY_REPORT%")>] timer: TimerInfo, ctx: FunctionContext) =
+
+    let log = ctx.GetLogger<LogPoller>()
+    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
+    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
+
+    let postToAll (replies:Bluesky.Reply list) =
+        let formattedSlack = replies |> Bluesky.getSlackTableAsCodeBlock
+
+        let results =
+            [
+                // Teams
+                //postToWebhook cfg.Logger teamsAzureAlertsWebhook formattedTeams
+                // Slack
+                Funcs.postToWebhook log slackAzureAlertsWebhook formattedSlack
+            ]
+            |> Async.Parallel
+            |> Async.RunSynchronously
+                
+        match results |> Array.exists(fun r -> r.IsError) with
+        | true -> Error "Some POST operations failed."
+        | false -> Ok "All POST operations succeeded."
+
+    log
+    |> SocialsActivityReport.config
+    |> Bluesky.getNewReplies timer.ScheduleStatus.Last
+    |> postToAll
+
 [<Function("SignIns")>]
 // Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"
-let runSignIns ([<TimerTrigger("%CRON_SIGNINS%")>] timer: TimerInfo, context: FunctionContext) =
-    let log = context.GetLogger<LogPoller>()
-    log.LogInformation($"F# Timer trigger function 'SignIns' fired at: {timer.ScheduleStatus.LastUpdated}")
+let runSignIns ([<TimerTrigger("%CRON_SIGNINS%")>] timer: TimerInfo, ctx: FunctionContext) =
+    let log = ctx.GetLogger<LogPoller>()
+    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
     log
     |> SignIns.config
@@ -550,7 +538,7 @@ let runSignIns ([<TimerTrigger("%CRON_SIGNINS%")>] timer: TimerInfo, context: Fu
 let runCreatedServicePrincipals ([<TimerTrigger("%CRON_CREATED_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
     let log = ctx.GetLogger<LogPoller>()
     use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
-    log.LogInformation(sprintf $"F# Timer trigger function 'CreatedServicePrincipals' fired at: {timer.ScheduleStatus.LastUpdated}")
+    log.LogInformation(sprintf $"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
     log
     |> ServicePrincipalCreations.config
@@ -561,17 +549,17 @@ let runCreatedServicePrincipals ([<TimerTrigger("%CRON_CREATED_SERVICE_PRINCIPAL
 let runStaleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
     let log = ctx.GetLogger<LogPoller>()
     use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
-    log.LogInformation($"F# Timer trigger function 'StaleServicePrincipals' fired at: {timer.ScheduleStatus.LastUpdated}")
+    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
     log
     |> StaleServicePrincipals.config
     |> Funcs.runQuery
 
 [<Function("AzureAlert")>]
-let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (context: FunctionContext) =
+let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (ctx: FunctionContext) =
     
-    let log = context.GetLogger<LogPoller>()
-    let logPrefix = sprintf "[%s]: %s" context.FunctionDefinition.Name
+    let log = ctx.GetLogger<LogPoller>()
+    let logPrefix = sprintf "[%s]: %s" ctx.FunctionDefinition.Name
 
     let getRequestBody (req:HttpRequestData) =
         async {
@@ -603,7 +591,7 @@ let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (context: FunctionConte
         $"{{\"text\":\"{payload}\"}}"
     
 
-    log.LogInformation(sprintf $"F# HttpTrigger function 'AzureAlert' fired at: {DateTime.Now}" |> logPrefix)
+    log.LogInformation(sprintf $"F# HttpTrigger function '{ctx.FunctionDefinition.Name}' fired at: {DateTime.Now}" |> logPrefix)
 
     let runAsync (formatter:FormatMsg) (req:HttpRequestData) =
         // REFACTOR THIS WITH A CLEARER BRAIN
@@ -614,8 +602,8 @@ let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (context: FunctionConte
                 match! body |> getIncomingPayload with
                 | Ok essentials ->
                     let outPayload = essentials |> formatter
-                    let postedMsgTeams = Funcs.postToWebhook log teamsWebhook outPayload
-                    let postedMsgSlack = Funcs.postToWebhook log slackWebhook outPayload
+                    let postedMsgTeams = Funcs.postToWebhook log teamsAzureAlertsWebhook outPayload
+                    let postedMsgSlack = Funcs.postToWebhook log slackAzureAlertsWebhook outPayload
 
                     let! posts = Async.Parallel [ postedMsgTeams; postedMsgSlack]
 

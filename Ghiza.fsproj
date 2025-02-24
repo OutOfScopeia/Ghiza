@@ -9,21 +9,25 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="AdaptiveCards" Version="3.1.0" />
-    <PackageReference Include="AdaptiveCards.Templating" Version="2.0.4" />
-    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+    <PackageReference Include="AdaptiveCards.Templating" Version="2.0.5" />
+    <PackageReference Include="Azure.Identity" Version="1.13.2" />
     <PackageReference Include="Azure.Monitor.Query" Version="1.6.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.3.1" />
 	<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.0.0" />
-    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.22.0" />
-	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.2.0" />
-	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.0.0" />
+    <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
+	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
+	<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.0.1" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.0.0" />
-	<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-	<PackageReference Include="Microsoft.Graph" Version="5.67.0" />
+	<PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.2" />
+	<PackageReference Include="Microsoft.Graph" Version="5.70.0" />
 	<PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Config.fs" />
+    <Compile Include="Domain.fs" />
+    <Compile Include="Domain.Slack.fs" />
+    <Compile Include="Domain.Bluesky.fs" />
     <Compile Include="Ghiza.fs" />
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -37,6 +41,6 @@
     <Using Include="System.Threading.ExecutionContext" Alias="ExecutionContext" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Update="FSharp.Core" Version="9.0.100" />
+    <PackageReference Update="FSharp.Core" Version="9.0.201" />
   </ItemGroup>
 </Project>
