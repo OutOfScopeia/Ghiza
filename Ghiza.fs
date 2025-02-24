@@ -507,9 +507,9 @@ let runSocialsActivityReport ([<TimerTrigger("%CRON_SOCIALS_ACTIVITY_REPORT%")>]
         let results =
             [
                 // Teams
-                //postToWebhook cfg.Logger teamsAzureAlertsWebhook formattedTeams
+                //postToWebhook cfg.Logger teamsSocialAlertsWebhook formattedTeams
                 // Slack
-                Funcs.postToWebhook log slackAzureAlertsWebhook formattedSlack
+                Funcs.postToWebhook log slackSocialAlertsWebhook formattedSlack
             ]
             |> Async.Parallel
             |> Async.RunSynchronously
