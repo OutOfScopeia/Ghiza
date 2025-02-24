@@ -521,7 +521,7 @@ let runSocialsActivityReport ([<TimerTrigger("%CRON_SOCIALS_ACTIVITY_REPORT%")>]
     log
     |> SocialsActivityReport.config
     |> Bluesky.getNewReplies timer.ScheduleStatus.Last
-    |> postToAll
+    |> fun replies -> if replies.IsEmpty then Ok "No replies to post" else replies |> postToAll
 
 [<Function("SignIns")>]
 // Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"
