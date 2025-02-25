@@ -16,6 +16,7 @@ open Cfg
 
     type Reply = {
         RootPostUrl: string
+        AuthorDid: string
         AuthorHandle: string
         AuthorDisplayName: string
         AuthorAvatarUrl: string
@@ -36,6 +37,7 @@ open Cfg
             
             {
                 RootPostUrl = tkn.SelectToken("$.post.record.reply.root.uri").ToString() |> getUrlFromAt
+                AuthorDid = tkn.SelectToken("$.post.author.did").ToString()
                 AuthorHandle = tkn.SelectToken("$.post.author.handle").ToString()
                 AuthorDisplayName = tkn.SelectToken("$.post.author.displayName").ToString()
                 AuthorAvatarUrl = tkn.SelectToken("$.post.author.avatar").ToString()
@@ -82,6 +84,7 @@ open Cfg
             |> List.collect getReplies
             |> List.map Reply.fromJson
             |> List.filter (fun r -> r.CreatedAtUtc >= lastInvocation)
+            |> List.filter (fun r -> r.AuthorDid <> blueskyDid)
             |> List.sortBy (fun r -> r.RootPostUrl)
         newReplies
 

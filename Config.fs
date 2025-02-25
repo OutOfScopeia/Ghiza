@@ -16,6 +16,7 @@ let teamsAzureAlertsWebhook = Environment.GetEnvironmentVariable "TEAMS_MONITORI
 let slackAzureAlertsWebhook = Environment.GetEnvironmentVariable "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK"
 let teamsSocialAlertsWebhook = Environment.GetEnvironmentVariable "TEAMS_SOCIALS_CHANNEL_WEBHOOK"
 let slackSocialAlertsWebhook = Environment.GetEnvironmentVariable "SLACK_SOCIALS_CHANNEL_WEBHOOK"
+/// CIT's Decentralised Identifier on Bluesky
 let blueskyDid = Environment.GetEnvironmentVariable "BLUESKY_AT_IDENTIFIER"
 let blueskyPublicApiBaseUrl = "https://public.api.bsky.app"
 
