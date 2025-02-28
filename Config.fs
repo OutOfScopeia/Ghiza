@@ -18,8 +18,12 @@ let teamsSocialAlertsWebhook = Environment.GetEnvironmentVariable "TEAMS_SOCIALS
 let slackSocialAlertsWebhook = Environment.GetEnvironmentVariable "SLACK_SOCIALS_CHANNEL_WEBHOOK"
 /// CIT's Decentralised Identifier on Bluesky
 let blueskyDid = Environment.GetEnvironmentVariable "BLUESKY_AT_IDENTIFIER"
-let blueskyPublicApiBaseUrl = "https://public.api.bsky.app"
-
+let xBearerToken = Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
+let xHandle = Environment.GetEnvironmentVariable "X_HANDLE"
 let credential = ClientSecretCredential(tenantId, clientId, clientSecret)
 let logsQueryClient = LogsQueryClient(credential)
 let graphClient = new GraphServiceClient(credential)
+
+let truncText (text:string) =
+    let truncLength = 39
+    if text.Length > truncLength then text.Substring(0, truncLength) + "…" else text

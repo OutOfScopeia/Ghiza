@@ -6,6 +6,7 @@ open Thoth.Json.Net
 open Domain
 open Slack
 open Cfg
+open System.Threading.Tasks
     // Namespace IDs
     module NSID =
         let root = "xrpc"
@@ -14,21 +15,17 @@ open Cfg
         let getPostThread = $"{root}/app.bsky.feed.getPostThread"
         let getAuthorFeed = $"{root}/app.bsky.feed.getAuthorFeed"
 
-    type Reply = {
-        RootPostUrl: string
-        AuthorDid: string
-        AuthorHandle: string
-        AuthorDisplayName: string
-        AuthorAvatarUrl: string
-        CreatedAtUtc: DateTime
-        Text: string
-    }
-    with
+    type Author with
         static member fromJson (tkn:Linq.JToken) =
-            let truncText (text:string) =
-                let truncLength = 39
-                if text.Length > truncLength then text.Substring(0, truncLength) + "…" else text
+            {
+                Id              = tkn.SelectToken("$.post.author.did").ToString()
+                Name            = tkn.SelectToken("$.post.author.displayName").ToString()
+                Handle          = tkn.SelectToken("$.post.author.handle").ToString()
+                ProfileImageUrl = tkn.SelectToken("$.post.author.avatar").ToString()
+            }
 
+    type Reply with
+        static member fromJson (tkn:Linq.JToken) =
                 // at://{did-identifier}/app.bsky.feed.post/3lhswsqnokm2b
                 // https://bsky.app/profile/{did-identifier}/post/3lhswsqnokm2b
             let getUrlFromAt (at:string) =
@@ -37,63 +34,88 @@ open Cfg
             
             {
                 RootPostUrl = tkn.SelectToken("$.post.record.reply.root.uri").ToString() |> getUrlFromAt
-                AuthorDid = tkn.SelectToken("$.post.author.did").ToString()
-                AuthorHandle = tkn.SelectToken("$.post.author.handle").ToString()
-                AuthorDisplayName = tkn.SelectToken("$.post.author.displayName").ToString()
-                AuthorAvatarUrl = tkn.SelectToken("$.post.author.avatar").ToString()
+                ReplyPostUrl = tkn.SelectToken("$.post.uri").ToString() |> getUrlFromAt
+                Author = Author.fromJson tkn
                 CreatedAtUtc = DateTime.Parse((tkn.SelectToken("$.post.record.createdAt").ToString()), null, Globalization.DateTimeStyles.RoundtripKind)
                 Text = tkn.SelectToken("$.post.record.text").ToString() |> truncText
             }
 
+    let publicApiBaseUrl = "https://public.api.bsky.app"
+    
     // get author feed, scan all posts for new interactions (after 'last checked' timestamp).
-    let getNewReplies (lastInvocation:DateTime) (cfg:QueryConfig) =
+    let getNewReplies (lastInvocation:DateTime) =
+        
+        let getReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
+
         let fetchAuthorFeedPostIds (did:string) =
             async {
-                // gets only posts_with_replies by default. add 'filter' parameter to change that.
-                // this ignore cursor. yeah, IMPLEMENT CURSOR-MINDED APPROACH or we can only scan the first 100 posts!
-                let requestUrl = $"{blueskyPublicApiBaseUrl}/{NSID.getAuthorFeed}?actor={did}&limit=100"
+            // gets only posts_with_replies by default. add 'filter' parameter to change that.
+            // this ignore cursor. yeah, IMPLEMENT CURSOR-MINDED APPROACH or we can only scan the first 100 posts!
+                let requestUrl = $"{publicApiBaseUrl}/{NSID.getAuthorFeed}?actor={did}&limit=100"
                 use httpClient = new HttpClient()
                 let! response = httpClient.GetStringAsync(requestUrl) |> Async.AwaitTask
                 let json = JsonValue.Parse(response)
                 let postIds =
-                    // might need to include more than just 'post' entries. it seems a feed can also contain reposts and replies by actor.
+                // might need to include more than just 'post' entries. it seems a feed can also contain reposts and replies by actor.
                     json.SelectTokens("$.feed[*].post.uri")
                     |> Seq.map(fun jtoken -> jtoken.ToString())
                 return postIds
             }
             
-        let getThreads (postIds:string seq) =
-            let httpClient = new HttpClient()
-            let fetchThread (postId:string) =
-                async {
-                    let requestUrl = $"{blueskyPublicApiBaseUrl}/{NSID.getPostThread}?uri={postId}&depth=1000"
-                    let! response = httpClient.GetStringAsync(requestUrl) |> Async.AwaitTask
-                    let json = JsonValue.Parse(response)
-                    return json
-                }
+        let getThread (postId:string) =
+            async {
+                let httpClient = new HttpClient()
+                let requestUrl = $"{publicApiBaseUrl}/{NSID.getPostThread}?uri={postId}&depth=1000"
+                let! response = httpClient.GetStringAsync(requestUrl) |> Async.AwaitTask
+                let json = JsonValue.Parse(response)
+                return json
+            }
 
-            postIds |> Seq.map fetchThread |> Async.Parallel |> Async.RunSynchronously |> List.ofArray
+        let getReplies (did:string) =
+            async {
+                try
+                    let! postIdsResult = did |> fetchAuthorFeedPostIds
+                    let! threads = postIdsResult |> Seq.map getThread |> Async.Parallel
+                    return
+                        threads
+                        |> Seq.ofArray
+                        |> Seq.collect getReplies
+                        |> Seq.map Reply.fromJson
+                        |> Seq.filter (fun r -> r.CreatedAtUtc >= lastInvocation)
+                        |> Seq.filter (fun r -> r.Author.Id <> blueskyDid)
+                        |> Seq.sortBy (fun r -> r.RootPostUrl)
+                        |> fun replies -> if replies |> Seq.isEmpty then Error "No new replies found on Bluesky" else Ok replies
+                with
+                | :? InvalidOperationException as ex -> return Error ex.Message
+                | :? HttpRequestException as ex -> return Error ex.Message
+                | :? TaskCanceledException as ex -> return Error ex.Message
+                | :? UriFormatException as ex -> return Error ex.Message
+            }
+
+        //let getThreads (postIds:string seq) =
+        //    let httpClient = new HttpClient()
+        //    let fetchThread (postId:string) =
+        //        async {
+        //            let requestUrl = $"{publicApiBaseUrl}/{NSID.getPostThread}?uri={postId}&depth=1000"
+        //            let! response = httpClient.GetStringAsync(requestUrl) |> Async.AwaitTask
+        //            let json = JsonValue.Parse(response)
+        //            return json
+        //        }
+
+        //    postIds |> Seq.map fetchThread |> Async.Parallel |> Async.RunSynchronously |> List.ofArray
 
         // returns a flat collection of all nested replies
-        let getReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]") |> List.ofSeq
 
-        let newReplies =
-            blueskyDid
-            |> fetchAuthorFeedPostIds |> Async.RunSynchronously
-            |> getThreads
-            |> List.collect getReplies
-            |> List.map Reply.fromJson
-            |> List.filter (fun r -> r.CreatedAtUtc >= lastInvocation)
-            |> List.filter (fun r -> r.AuthorDid <> blueskyDid)
-            |> List.sortBy (fun r -> r.RootPostUrl)
+        let newReplies = blueskyDid |> getReplies |> Async.RunSynchronously
+
         newReplies
 
-    let getSlackTableAsCodeBlock (replies: Reply list) =
-        let title = "Bluesky post replies in the last 1 hour"
+    let getSlackTableAsCodeBlock (replies: Reply seq) =
+        let title = "New replies on Bluesky"
         let colNames = ["Root post"; "Handle"; "Text"]
         let colWidths =
             let cols = colNames |> Seq.map String.length
-            let rows = replies |> Seq.map (fun reply -> [ reply.RootPostUrl; reply.AuthorHandle; reply.Text ] |> Seq.map String.length)
+            let rows = replies |> Seq.map (fun reply -> [ reply.RootPostUrl; reply.Author.Handle; reply.Text ] |> Seq.map String.length)
             
             [cols; yield! rows]
             |> Seq.transpose
@@ -141,7 +163,7 @@ open Cfg
                     yield walledtableEdge
                     yield getWalledRow colNames
                     yield walledtableEdge
-                    yield! replies |> Seq.map (fun reply -> [ reply.RootPostUrl; reply.AuthorHandle; reply.Text ]) |> Seq.map getWalledRow
+                    yield! replies |> Seq.map (fun reply -> [ reply.RootPostUrl; reply.Author.Handle; reply.Text ]) |> Seq.map getWalledRow
                     yield walledtableEdge
                     yield "```"
                 }

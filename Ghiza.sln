@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		POST.ps1 = POST.ps1
 		POSTcard.ps1 = POSTcard.ps1
 		readme.txt = readme.txt
+		x-get-tweets.json = x-get-tweets.json
+		x-search-recent-tweets.json = x-search-recent-tweets.json
 	EndProjectSection
 EndProject
 Global

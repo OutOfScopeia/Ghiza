@@ -287,8 +287,8 @@ module SignIns =
         Table = None
         QueryTimeRange = timeSpan()
         Formatters = {
-            TeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
-            SlackWebhook = JsonUtils.getSlackTableAsCodeBlock
+            LogsTeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
+            LogsSlackWebhook = JsonUtils.getSlackTableAsCodeBlock
         }
         Logger = log
         Message = ""
@@ -319,36 +319,12 @@ module ServicePrincipalCreations =
         Table = None
         QueryTimeRange = timeSpan()
         Formatters = {
-            TeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
-            SlackWebhook = JsonUtils.getSlackTableAsCodeBlock
+            LogsTeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
+            LogsSlackWebhook = JsonUtils.getSlackTableAsCodeBlock
         }
         Logger = log
         Message = ""
     }
-
-module SocialsActivityReport =
-    let config (log:ILogger) =
-        
-        use _ = log.BeginScope("Config")
-
-        let time () = DateTime.Now
-
-        let title () = $"{time()} | Social posts activity in the last 1 minute:"
-
-        let tableBkgColor = "Black"
-
-        {
-            Query = String.Empty
-            Title = title()
-            Table = None
-            QueryTimeRange = TimeSpan.FromMinutes(1L)
-            Formatters = {
-                TeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
-                SlackWebhook = JsonUtils.getSlackTableAsCodeBlock
-            }
-            Logger = log
-            Message = ""
-        }
 
 module StaleServicePrincipals =
     // SCRUTINISE THIS
@@ -400,15 +376,16 @@ module StaleServicePrincipals =
             Table = None
             QueryTimeRange = TimeSpan.MaxValue
             Formatters = {
-                TeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
-                SlackWebhook = JsonUtils.getSlackTableAsCodeBlock
+                LogsTeamsWebhook = JsonUtils.getTeamsAdaptiveCardFormat
+                LogsSlackWebhook = JsonUtils.getSlackTableAsCodeBlock
             }
             Logger = log
             Message = ""
         }
 
+
 module Funcs =
-    let getQueryResult (cfg:QueryConfig) =
+    let getQueryResult (cfg:LogQueryConfig) =
         let response =
             logsQueryClient.QueryWorkspaceAsync(workspaceId, cfg.Query, QueryTimeRange(cfg.QueryTimeRange))
             |> Async.AwaitTask
@@ -458,11 +435,12 @@ module Funcs =
                 return Error errorMsg
         }
 
-    let postToAll (result:Result<QueryConfig,QueryConfig>) =
+
+    let postToAll (result:Result<LogQueryConfig,LogQueryConfig>) =
         match result with
         | Ok cfg ->
-            let formattedTeams = cfg.Formatters.TeamsWebhook cfg.Table.Value cfg.Title
-            let formattedSlack = cfg.Formatters.SlackWebhook cfg.Table.Value cfg.Title
+            let formattedTeams = cfg.Formatters.LogsTeamsWebhook cfg.Table.Value cfg.Title
+            let formattedSlack = cfg.Formatters.LogsSlackWebhook cfg.Table.Value cfg.Title
 
             let results =
                 [
@@ -486,42 +464,48 @@ module Funcs =
     //        cfg.Logger.LogInformation(sprintf $"SUCCESS: Post returned: {cfg.Message}")
     //    | Error cfg ->
     //        cfg.Logger.LogError(sprintf $"ERROR: {cfg.Message}")
-
-
-    let runQuery (cfg:QueryConfig) =
+    
+    let runQuery (cfg:LogQueryConfig) =
         cfg
         |> getQueryResult
         |> postToAll
 
-[<Function("SocialsActivityReport")>]
-// Cron expression sourced from app settings: every hour "0 * * * *"
-let runSocialsActivityReport ([<TimerTrigger("%CRON_SOCIALS_ACTIVITY_REPORT%")>] timer: TimerInfo, ctx: FunctionContext) =
+module SocialsReport =
+    let runRepliesReport (timer:TimerInfo) (ctx:FunctionContext) =
+        let log = ctx.GetLogger<LogPoller>()
+        use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
+        log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-    let log = ctx.GetLogger<LogPoller>()
-    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
-    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
-
-    let postToAll (replies:Bluesky.Reply list) =
-        let formattedSlack = replies |> Bluesky.getSlackTableAsCodeBlock
-
-        let results =
-            [
-                // Teams
-                //postToWebhook cfg.Logger teamsSocialAlertsWebhook formattedTeams
-                // Slack
-                Funcs.postToWebhook log slackSocialAlertsWebhook formattedSlack
-            ]
-            |> Async.Parallel
-            |> Async.RunSynchronously
+        let postToAll (codeBlock: string) =
+            let results =
+                [
+                    // Teams
+                    //postToWebhook cfg.Logger teamsSocialAlertsWebhook formattedTeams
+                    // Slack
+                    Funcs.postToWebhook log slackSocialAlertsWebhook codeBlock
+                ]
+                |> Async.Parallel
+                |> Async.RunSynchronously
                 
-        match results |> Array.exists(fun r -> r.IsError) with
-        | true -> Error "Some POST operations failed."
-        | false -> Ok "All POST operations succeeded."
+            match results |> Array.exists(fun r -> r.IsError) with
+            | true -> Error "Some POST operations failed."
+            | false -> Ok "All POST operations succeeded."
 
-    log
-    |> SocialsActivityReport.config
-    |> Bluesky.getNewReplies timer.ScheduleStatus.Last
-    |> fun replies -> if replies.IsEmpty then Ok "No replies to post" else replies |> postToAll
+        let codeBlock =
+            match ctx.FunctionDefinition.Name with
+            | "RepliesReport_Bluesky" -> timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsCodeBlock
+            | "RepliesReport_X"       -> timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
+            | _ -> failwith "Failed to determine function name from context."
+
+        codeBlock |> Result.bind postToAll |> Result.mapError (fun e -> log.LogError e)
+
+[<Function("RepliesReport_Bluesky")>]
+let runRepliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) =
+    SocialsReport.runRepliesReport timer ctx
+
+[<Function("RepliesReport_X")>]
+let runRepliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) =
+    SocialsReport.runRepliesReport timer ctx
 
 [<Function("SignIns")>]
 // Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"

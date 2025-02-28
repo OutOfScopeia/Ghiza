@@ -28,6 +28,7 @@
     <Compile Include="Domain.fs" />
     <Compile Include="Domain.Slack.fs" />
     <Compile Include="Domain.Bluesky.fs" />
+    <Compile Include="Domain.X.fs" />
     <Compile Include="Ghiza.fs" />
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
