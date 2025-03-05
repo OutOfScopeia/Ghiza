@@ -416,9 +416,9 @@ module Funcs =
 
     let postToWebhook (log:ILogger) (hook:string) (formatted:string) =
         use _ = log.BeginScope("Posting to webhook")
-        //IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-preminify.json", formatted)
+        IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-preminify.json", formatted)
         let formatted = formatted |> JsonUtils.minify
-        //IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-postminify.json", formatted)
+        IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-postminify.json", formatted)
         //log.LogInformation ($"POSTING: {formatted}")
         async {
             use client = new HttpClient()
@@ -493,7 +493,7 @@ module SocialsReport =
 
         let codeBlock =
             match ctx.FunctionDefinition.Name with
-            | "RepliesReport_Bluesky" -> timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsCodeBlock
+            | "RepliesReport_Bluesky" -> timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsBlocks
             | "RepliesReport_X"       -> timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
             | _ -> failwith "Failed to determine function name from context."
 
@@ -503,103 +503,103 @@ module SocialsReport =
 let runRepliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) =
     SocialsReport.runRepliesReport timer ctx
 
-[<Function("RepliesReport_X")>]
-let runRepliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) =
-    SocialsReport.runRepliesReport timer ctx
+//[<Function("RepliesReport_X")>]
+//let runRepliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) =
+//    SocialsReport.runRepliesReport timer ctx
 
-[<Function("SignIns")>]
-// Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"
-let runSignIns ([<TimerTrigger("%CRON_SIGNINS%")>] timer: TimerInfo, ctx: FunctionContext) =
-    let log = ctx.GetLogger<LogPoller>()
-    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
+//[<Function("SignIns")>]
+//// Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"
+//let runSignIns ([<TimerTrigger("%CRON_SIGNINS%")>] timer: TimerInfo, ctx: FunctionContext) =
+//    let log = ctx.GetLogger<LogPoller>()
+//    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-    log
-    |> SignIns.config
-    |> Funcs.runQuery
+//    log
+//    |> SignIns.config
+//    |> Funcs.runQuery
     
-[<Function("CreatedServicePrincipals")>]
-// Cron expression sourced from app settings: daily at 6PM "0 18 * * *"
-let runCreatedServicePrincipals ([<TimerTrigger("%CRON_CREATED_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
-    let log = ctx.GetLogger<LogPoller>()
-    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
-    log.LogInformation(sprintf $"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
+//[<Function("CreatedServicePrincipals")>]
+//// Cron expression sourced from app settings: daily at 6PM "0 18 * * *"
+//let runCreatedServicePrincipals ([<TimerTrigger("%CRON_CREATED_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
+//    let log = ctx.GetLogger<LogPoller>()
+//    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
+//    log.LogInformation(sprintf $"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-    log
-    |> ServicePrincipalCreations.config
-    |> Funcs.runQuery
+//    log
+//    |> ServicePrincipalCreations.config
+//    |> Funcs.runQuery
 
-[<Function("StaleServicePrincipals")>]
-// Cron expression sourced from app settings: every Monday at 10AM "0 10 * * 1"
-let runStaleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
-    let log = ctx.GetLogger<LogPoller>()
-    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
-    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
+//[<Function("StaleServicePrincipals")>]
+//// Cron expression sourced from app settings: every Monday at 10AM "0 10 * * 1"
+//let runStaleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =
+//    let log = ctx.GetLogger<LogPoller>()
+//    use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
+//    log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-    log
-    |> StaleServicePrincipals.config
-    |> Funcs.runQuery
+//    log
+//    |> StaleServicePrincipals.config
+//    |> Funcs.runQuery
 
-[<Function("AzureAlert")>]
-let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (ctx: FunctionContext) =
+//[<Function("AzureAlert")>]
+//let runAzureAlert ([<HttpTrigger>] req: HttpRequestData) (ctx: FunctionContext) =
     
-    let log = ctx.GetLogger<LogPoller>()
-    let logPrefix = sprintf "[%s]: %s" ctx.FunctionDefinition.Name
+//    let log = ctx.GetLogger<LogPoller>()
+//    let logPrefix = sprintf "[%s]: %s" ctx.FunctionDefinition.Name
 
-    let getRequestBody (req:HttpRequestData) =
-        async {
-            try
-                use reader = new StreamReader(req.Body)
-                let! body = reader.ReadToEndAsync() |> Async.AwaitTask
-                return (Ok body)
-            with
-            | ex ->
-                log.LogError($"{ex.Message}" |> logPrefix)
-                return Error ex.Message
-        }
+//    let getRequestBody (req:HttpRequestData) =
+//        async {
+//            try
+//                use reader = new StreamReader(req.Body)
+//                let! body = reader.ReadToEndAsync() |> Async.AwaitTask
+//                return (Ok body)
+//            with
+//            | ex ->
+//                log.LogError($"{ex.Message}" |> logPrefix)
+//                return Error ex.Message
+//        }
 
-    let getIncomingPayload (body:string) =
-        async {
-            let result =
-                match body |> Payload.Essentials.FromCommonAlertSchema with
-                | Ok es ->
-                    log.LogInformation("Successfully parsed incoming payload." |> logPrefix)
-                    Ok es
-                | Error e ->
-                    Error e
+//    let getIncomingPayload (body:string) =
+//        async {
+//            let result =
+//                match body |> Payload.Essentials.FromCommonAlertSchema with
+//                | Ok es ->
+//                    log.LogInformation("Successfully parsed incoming payload." |> logPrefix)
+//                    Ok es
+//                | Error e ->
+//                    Error e
             
-            return result
-        }
+//            return result
+//        }
 
-    let getOutgoingPayloadTeams (e:Payload.Essentials) =
-        let payload = $"ALERT: {e.firedDateTime} - {e.alertRule} - {e.description} - {e.monitorCondition}"
-        $"{{\"text\":\"{payload}\"}}"
+//    let getOutgoingPayloadTeams (e:Payload.Essentials) =
+//        let payload = $"ALERT: {e.firedDateTime} - {e.alertRule} - {e.description} - {e.monitorCondition}"
+//        $"{{\"text\":\"{payload}\"}}"
     
 
-    log.LogInformation(sprintf $"F# HttpTrigger function '{ctx.FunctionDefinition.Name}' fired at: {DateTime.Now}" |> logPrefix)
+//    log.LogInformation(sprintf $"F# HttpTrigger function '{ctx.FunctionDefinition.Name}' fired at: {DateTime.Now}" |> logPrefix)
 
-    let runAsync (formatter:FormatMsg) (req:HttpRequestData) =
-        // REFACTOR THIS WITH A CLEARER BRAIN
-        // ACCOMODATE MORE ALERT TYPES - SOME OF THE TEST PAYLOADS ARE NOT POSTING
-        async {
-            match! req |> getRequestBody with
-            | Ok body ->
-                match! body |> getIncomingPayload with
-                | Ok essentials ->
-                    let outPayload = essentials |> formatter
-                    let postedMsgTeams = Funcs.postToWebhook log teamsAzureAlertsWebhook outPayload
-                    let postedMsgSlack = Funcs.postToWebhook log slackAzureAlertsWebhook outPayload
+//    let runAsync (formatter:FormatMsg) (req:HttpRequestData) =
+//        // REFACTOR THIS WITH A CLEARER BRAIN
+//        // ACCOMODATE MORE ALERT TYPES - SOME OF THE TEST PAYLOADS ARE NOT POSTING
+//        async {
+//            match! req |> getRequestBody with
+//            | Ok body ->
+//                match! body |> getIncomingPayload with
+//                | Ok essentials ->
+//                    let outPayload = essentials |> formatter
+//                    let postedMsgTeams = Funcs.postToWebhook log teamsAzureAlertsWebhook outPayload
+//                    let postedMsgSlack = Funcs.postToWebhook log slackAzureAlertsWebhook outPayload
 
-                    let! posts = Async.Parallel [ postedMsgTeams; postedMsgSlack]
+//                    let! posts = Async.Parallel [ postedMsgTeams; postedMsgSlack]
 
-                    let r =
-                        match posts |> Array.forall (fun r -> r.IsOk) with
-                        | true -> Ok ()
-                        | false -> Error "fr"
-                    return r
+//                    let r =
+//                        match posts |> Array.forall (fun r -> r.IsOk) with
+//                        | true -> Ok ()
+//                        | false -> Error "fr"
+//                    return r
 
-                | Error e -> return Error e
-            | Error e -> return Error e
-        }
+//                | Error e -> return Error e
+//            | Error e -> return Error e
+//        }
      
-    runAsync getOutgoingPayloadTeams req
-    |> Async.RunSynchronously
+//    runAsync getOutgoingPayloadTeams req
+//    |> Async.RunSynchronously

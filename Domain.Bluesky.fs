@@ -40,6 +40,12 @@ open System.Threading.Tasks
                 Text = tkn.SelectToken("$.post.record.text").ToString() |> truncText
             }
 
+                                   // <https://google.com|this is a link>
+        member x.HandleAsRootLink = $"<{x.RootPostUrl}|{x.Author.Handle}>"
+        member x.NameAsRootLink   = $"<{x.RootPostUrl}|{x.Author.Name}>"
+        member x.HandleAsReplyLink = $"<{x.ReplyPostUrl}|{x.Author.Handle}>"
+        member x.NameAsReplyLink  = $"<{x.ReplyPostUrl}|{x.Author.Name}>"
+
     let publicApiBaseUrl = "https://public.api.bsky.app"
     
     // get author feed, scan all posts for new interactions (after 'last checked' timestamp).
@@ -176,3 +182,23 @@ open System.Threading.Tasks
         let cblock = codeBlock |> Block.JustText
 
         cblock |> string
+
+    let getSlackTableAsBlocks (replies: Reply seq) =
+        
+        let title = "New replies on Bluesky"
+
+        let replyToContextBlock (reply: Reply) =
+            [
+                Element.Image <| Image.Create reply.Author.Name reply.Author.ProfileImageUrl
+                //Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"[{reply.Author.Handle}]({reply.RootPostUrl}) | {reply.Text |> truncText}")
+                Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"{reply.HandleAsRootLink} | {reply.Text |> truncText}")
+            ]
+            |> Block.Context
+
+        replies
+        |> List.ofSeq
+        |> List.map replyToContextBlock
+        |> Block.Blocks
+        |> string
+
+    // try the above with "rich_text_preformatted" (quoted text)
