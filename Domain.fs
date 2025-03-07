@@ -24,6 +24,10 @@ type Reply = {
     Text: string
     Author: Author
 }
+with
+    /// Trunc to 'length' and remove line breaks
+    member x.TextTruncated (length:int) =
+        if x.Text.Length > length then x.Text.Substring(0, length).Replace("\r", "").Replace("\n", "") + "…" else x.Text
 
 type LogQueryFormatters = {
     LogsTeamsWebhook: LogsTable -> string -> string

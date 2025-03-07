@@ -5,7 +5,7 @@ open Azure.Identity
 open Azure.Monitor.Query
 open Microsoft.Graph
 
-//let isInLocal = String.IsNullOrEmpty(Environment.GetEnvironmentVariable "WEBSITE_INSTANCE_ID") // if not running in the cloud
+let isRunningLocally = String.IsNullOrEmpty(Environment.GetEnvironmentVariable "WEBSITE_INSTANCE_ID") // if not running in the cloud
 let lookbackMinutesSignIns = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SIGNINS"
 let lookbackMinutesSPCreations = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SPCREATIONS"
 let tenantId = Environment.GetEnvironmentVariable "TENANT_ID"
@@ -23,7 +23,3 @@ let xHandle = Environment.GetEnvironmentVariable "X_HANDLE"
 let credential = ClientSecretCredential(tenantId, clientId, clientSecret)
 let logsQueryClient = LogsQueryClient(credential)
 let graphClient = new GraphServiceClient(credential)
-
-let truncText (text:string) =
-    let truncLength = 39
-    if text.Length > truncLength then text.Substring(0, truncLength) + "…" else text

@@ -37,7 +37,7 @@ open System.Threading.Tasks
                 ReplyPostUrl = tkn.SelectToken("$.post.uri").ToString() |> getUrlFromAt
                 Author = Author.fromJson tkn
                 CreatedAtUtc = DateTime.Parse((tkn.SelectToken("$.post.record.createdAt").ToString()), null, Globalization.DateTimeStyles.RoundtripKind)
-                Text = tkn.SelectToken("$.post.record.text").ToString() |> truncText
+                Text = tkn.SelectToken("$.post.record.text").ToString()
             }
 
                                    // <https://google.com|this is a link>
@@ -47,9 +47,12 @@ open System.Threading.Tasks
         member x.NameAsReplyLink  = $"<{x.ReplyPostUrl}|{x.Author.Name}>"
 
     let publicApiBaseUrl = "https://public.api.bsky.app"
+    let platformName = "Bluesky"
     
     // get author feed, scan all posts for new interactions (after 'last checked' timestamp).
     let getNewReplies (lastInvocation:DateTime) =
+        // when in local dev env, stretch the lookback window
+        let lastInvocation = if isRunningLocally then lastInvocation.AddDays(-5.) else lastInvocation
         
         let getReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
 
@@ -117,7 +120,6 @@ open System.Threading.Tasks
         newReplies
 
     let getSlackTableAsCodeBlock (replies: Reply seq) =
-        let title = "New replies on Bluesky"
         let colNames = ["Root post"; "Handle"; "Text"]
         let colWidths =
             let cols = colNames |> Seq.map String.length
@@ -164,7 +166,7 @@ open System.Threading.Tasks
 
             let allRows =
                 seq {
-                    yield title
+                    yield $"New replies on {platformName}"
                     yield "```"
                     yield walledtableEdge
                     yield getWalledRow colNames
@@ -183,15 +185,15 @@ open System.Threading.Tasks
 
         cblock |> string
 
+    /// Shared function - move out of this module?
+    /// Try this with "rich_text_preformatted" (quoted text) instead?
     let getSlackTableAsBlocks (replies: Reply seq) =
         
-        let title = "New replies on Bluesky"
-
         let replyToContextBlock (reply: Reply) =
             [
                 Element.Image <| Image.Create reply.Author.Name reply.Author.ProfileImageUrl
                 //Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"[{reply.Author.Handle}]({reply.RootPostUrl}) | {reply.Text |> truncText}")
-                Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"{reply.HandleAsRootLink} | {reply.Text |> truncText}")
+                Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"{reply.HandleAsRootLink} | {reply.TextTruncated 39}")
             ]
             |> Block.Context
 
@@ -201,4 +203,20 @@ open System.Threading.Tasks
         |> Block.Blocks
         |> string
 
-    // try the above with "rich_text_preformatted" (quoted text)
+    /// Shared function - move out of this module?
+    let getTeamsTableAsCard (replies: Reply seq) =
+        
+        let replyToContextBlock (reply: Reply) =
+            [
+                Element.Image <| Image.Create reply.Author.Name reply.Author.ProfileImageUrl
+                //Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"[{reply.Author.Handle}]({reply.RootPostUrl}) | {reply.Text |> truncText}")
+                Element.Text <| Block.Text (TextType.Markdown MarkDownStyle.Plain, $"{reply.HandleAsRootLink} | {reply.TextTruncated 39}")
+            ]
+            |> Block.Context
+
+        replies
+        |> List.ofSeq
+        |> List.map replyToContextBlock
+        |> Block.Blocks
+        |> string
+    

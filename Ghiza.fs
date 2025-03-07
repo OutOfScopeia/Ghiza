@@ -128,6 +128,117 @@ module JsonUtils =
             
         card.ToJson() |> getMsg
 
+    let getTeamsAdaptiveCardFormat2 (title:string) (replies: Reply seq) =
+        let getMarkDownLink (text:string) (url:string) = $"[{text}]({url})"
+
+        let seqToList (seq: seq<'T>) : Collections.Generic.List<'T> =
+            let fsharpList = Seq.toList seq
+            new Collections.Generic.List<'T>(fsharpList)
+
+        let getTextBlock (str:string) =
+            let txtBlock = new AdaptiveTextBlock(str)
+            txtBlock.Wrap <- true
+            txtBlock
+
+        // combines avatar icon and handle link
+        let getContainer (reply:Reply) =
+            let image = AdaptiveImage()
+            image.AltText <- $"{reply.Author.Name}"
+            image.UrlString <- reply.Author.ProfileImageUrl
+            image.Size <- AdaptiveImageSize.Small
+
+            let txtBlock = getTextBlock (getMarkDownLink reply.Author.Handle reply.RootPostUrl)
+            
+            let container = AdaptiveContainer()
+            container.Items <- [ image :> AdaptiveElement; txtBlock ] |> seqToList
+
+            container
+            
+        let convertTable (replies: Reply seq) =
+            let colNames = [ "Handle"; "Text" ]
+
+            let getAdaptiveTableRow (reply: Reply) =
+
+                let cells =
+                    let e1 = reply |> getContainer
+                    let e2 = (reply.TextTruncated 31) |> getTextBlock
+
+                    let c1 = AdaptiveTableCell()
+                    let c2 = AdaptiveTableCell()
+
+                    c1.Type <- "TableCell"
+                    c2.Type <- "TableCell"
+
+                    c1.Items <- e1 :> AdaptiveElement |> Seq.singleton |> seqToList
+                    c2.Items <- e2 :> AdaptiveElement |> Seq.singleton |> seqToList
+
+
+
+                    [ c1; c2 ] |> seqToList
+
+                    //|> Seq.map (fun str ->
+                    //    let txtBlock = new AdaptiveTextBlock(str)
+                    //    txtBlock.Wrap <- true
+                    //    let cell = AdaptiveTableCell()
+                    //    let container = AdaptiveContainer()
+                    //    container.Items <- 
+                    //    // Type override as by default the type is "Container" and it breaks the card
+                    //    cell.Type <- "TableCell"
+                    //    cell.Items <- container :> AdaptiveElement |> Seq.singleton |> seqToList
+                    //    cell
+                    //    )
+
+                let atRow = new AdaptiveTableRow()
+                atRow.Cells <- cells
+                atRow.Style <- AdaptiveContainerStyle.Accent
+                atRow
+
+            let getHeaderCell (cname:string) =
+                let txtBlock = new AdaptiveTextBlock(cname) :> AdaptiveElement |> Seq.singleton |> seqToList
+                let cell = AdaptiveTableCell()
+                // Type override as by default the type is "Container" and it breaks the card
+                cell.Type <- "TableCell"
+                cell.Items <- txtBlock
+                cell
+
+            let atHeaderRow =
+                let hRow = new AdaptiveTableRow()
+                hRow.Cells <- (colNames |> Seq.map getHeaderCell |> seqToList) 
+                hRow
+
+            let atRows = replies |> Seq.map getAdaptiveTableRow
+            let allRows = seq { yield atHeaderRow; yield! atRows }
+
+            let aTableColumns = AdaptiveTableColumnDefinition()
+            aTableColumns.Width <- 1
+            aTableColumns.HorizontalContentAlignment <- AdaptiveHorizontalContentAlignment.Left
+            
+            let aTable = AdaptiveTable()
+            aTable.Rows <- (allRows |> seqToList)
+            aTable.Columns <- (aTableColumns |> Seq.replicate 2 |> seqToList)
+            aTable.FirstRowAsHeaders <- true
+            aTable.GridStyle <- AdaptiveContainerStyle.Accent
+
+            aTable
+
+        let tableElement = replies |> convertTable
+
+        let descElement = AdaptiveTextBlock(title)
+        descElement.Color <- AdaptiveTextColor.Good
+        descElement.Wrap <- true
+        descElement.Weight <- AdaptiveTextWeight.Bolder
+
+        // No lower than 1.5 for Table support
+        let card = AdaptiveCards.AdaptiveCard("1.5")
+
+        card.Body <- (([ descElement; tableElement ] : List<AdaptiveElement>) |> seqToList)
+
+        let getMsg = fun card -> $"""{{"type":"message","attachments":[{{"contentType":"application/vnd.microsoft.card.adaptive","contentUrl":null,"content":{card}}}]}}"""
+            
+        let c = card.ToJson() |> getMsg
+
+        c
+
     let getSlackTableAsCodeBlock (lTable: LogsTable) (title:string) =
         let colNames = lTable.Columns |> Seq.map(fun col -> col.Name) |> Seq.toList
         let colWidths =
@@ -476,13 +587,13 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-        let postToAll (codeBlock: string) =
+        let postToAll (payloadTeams: string) =
             let results =
                 [
                     // Teams
-                    //postToWebhook cfg.Logger teamsSocialAlertsWebhook formattedTeams
+                    Funcs.postToWebhook log teamsSocialAlertsWebhook payloadTeams
                     // Slack
-                    Funcs.postToWebhook log slackSocialAlertsWebhook codeBlock
+                    //Funcs.postToWebhook log slackSocialAlertsWebhook payloadSlack
                 ]
                 |> Async.Parallel
                 |> Async.RunSynchronously
@@ -491,13 +602,34 @@ module SocialsReport =
             | true -> Error "Some POST operations failed."
             | false -> Ok "All POST operations succeeded."
 
-        let codeBlock =
-            match ctx.FunctionDefinition.Name with
-            | "RepliesReport_Bluesky" -> timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsBlocks
-            | "RepliesReport_X"       -> timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
-            | _ -> failwith "Failed to determine function name from context."
+        //let payloadTeams, payloadSlack =
+        //    match ctx.FunctionDefinition.Name with
+        //    | "RepliesReport_Bluesky" ->
+        //        timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map JsonUtils.getTeamsAdaptiveCardFormat2,
+        //        timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsBlocks
 
-        codeBlock |> Result.bind postToAll |> Result.mapError (fun e -> log.LogError e)
+        //    | "RepliesReport_X" ->
+        //        timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map JsonUtils.getTeamsAdaptiveCardFormat2,
+        //        timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
+
+        //    | _ ->
+        //        failwith "Failed to determine function name from context."
+
+        let payloadTeams =
+            let titleTemplate = "New replies on"
+            match ctx.FunctionDefinition.Name with
+            | "RepliesReport_Bluesky" ->
+                let title = $"{titleTemplate} Bluesky"
+                timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+
+            | "RepliesReport_X" ->
+                let title = $"{titleTemplate} X"
+                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+
+            | _ ->
+                failwith "Failed to determine function name from context."
+
+        payloadTeams |> Result.bind postToAll |> Result.mapError (fun e -> log.LogError e)
 
 [<Function("RepliesReport_Bluesky")>]
 let runRepliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) =

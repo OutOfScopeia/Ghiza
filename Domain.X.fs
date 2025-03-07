@@ -31,7 +31,7 @@ open System.Threading.Tasks
                 RootPostUrl = $"https://x.com/{xHandle}/status/{conversationId}"
                 ReplyPostUrl = $"https://x.com/{author.Handle}/status/{id}"
                 CreatedAtUtc = createdAt
-                Text = tkn.SelectToken("$.text").ToString() |> truncText
+                Text = tkn.SelectToken("$.text").ToString()
                 Author = author
             }
 
