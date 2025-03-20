@@ -527,9 +527,9 @@ module Funcs =
 
     let postToWebhook (log:ILogger) (hook:string) (formatted:string) =
         use _ = log.BeginScope("Posting to webhook")
-        IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-preminify.json", formatted)
+        //IO.File.WriteAllText ("Z:\Ghiza\slack-json-generated-preminify.json", formatted)
         let formatted = formatted |> JsonUtils.minify
-        IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-postminify.json", formatted)
+        //IO.File.WriteAllText ("Z:\Ghiza\slack-json-generated-postminify.json", formatted)
         //log.LogInformation ($"POSTING: {formatted}")
         async {
             use client = new HttpClient()
@@ -587,7 +587,7 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-        let postToAll (payloadTeams: string) =
+        let postToAllTeams (payloadTeams: string) =
             let results =
                 [
                     // Teams
@@ -598,6 +598,21 @@ module SocialsReport =
                 |> Async.Parallel
                 |> Async.RunSynchronously
                 
+            match results |> Array.exists(fun r -> r.IsError) with
+                | true -> Error "Some POST operations failed."
+                | false -> Ok "All POST operations succeeded."
+        
+        let postToAllSlack (payloadSlack: string) =
+            let results =
+                [
+                    // Teams
+                    //Funcs.postToWebhook log teamsSocialAlertsWebhook payloadTeams
+                    // Slack
+                    Funcs.postToWebhook log slackSocialAlertsWebhook payloadSlack
+                ]
+                |> Async.Parallel
+                |> Async.RunSynchronously
+
             match results |> Array.exists(fun r -> r.IsError) with
             | true -> Error "Some POST operations failed."
             | false -> Ok "All POST operations succeeded."
@@ -615,21 +630,25 @@ module SocialsReport =
         //    | _ ->
         //        failwith "Failed to determine function name from context."
 
-        let payloadTeams =
+        let payloadTeams, payloadSlack=
             let titleTemplate = "New replies on"
             match ctx.FunctionDefinition.Name with
             | "RepliesReport_Bluesky" ->
                 let title = $"{titleTemplate} Bluesky"
-                timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
+                timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map Bluesky.getSlackTableAsBlocks
 
             | "RepliesReport_X" ->
                 let title = $"{titleTemplate} X"
-                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
+                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
 
             | _ ->
                 failwith "Failed to determine function name from context."
 
-        payloadTeams |> Result.bind postToAll |> Result.mapError (fun e -> log.LogError e)
+        // FIX THIS CRAP
+        payloadTeams |> Result.bind postToAllTeams |> Result.mapError (fun e -> log.LogError e) |> ignore
+        payloadSlack |> Result.bind postToAllSlack |> Result.mapError (fun e -> log.LogError e)
 
 [<Function("RepliesReport_Bluesky")>]
 let runRepliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) =
@@ -659,7 +678,7 @@ let runCreatedServicePrincipals ([<TimerTrigger("%CRON_CREATED_SERVICE_PRINCIPAL
     log
     |> ServicePrincipalCreations.config
     |> Funcs.runQuery
-
+    
 [<Function("StaleServicePrincipals")>]
 // Cron expression sourced from app settings: every Monday at 10AM "0 10 * * 1"
 let runStaleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] timer: TimerInfo, ctx: FunctionContext) =

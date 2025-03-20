@@ -52,7 +52,7 @@ open System.Threading.Tasks
     // get author feed, scan all posts for new interactions (after 'last checked' timestamp).
     let getNewReplies (lastInvocation:DateTime) =
         // when in local dev env, stretch the lookback window
-        let lastInvocation = if isRunningLocally then lastInvocation.AddDays(-5.) else lastInvocation
+        let lastInvocation = if isRunningLocally then DateTime.UtcNow.AddDays(-5.) else lastInvocation
         
         let getReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
 
