@@ -527,7 +527,7 @@ module Funcs =
 
     let postToWebhook (log:ILogger) (hook:string) (formatted:string) =
         use _ = log.BeginScope("Posting to webhook")
-        IO.File.WriteAllText ("E:\Ghiza\slack-json-generated-preminify.json", formatted)
+        //IO.File.WriteAllText ("Z:/Ghiza/slack-json-generated-preminify.json", formatted)
         let formatted = formatted |> JsonUtils.minify
         //IO.File.WriteAllText ("Z:/Ghiza/slack-json-generated-postminify.json", formatted)
         //log.LogInformation ($"POSTING: {formatted}")
