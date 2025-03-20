@@ -587,6 +587,8 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
+        let lastInvocation = if isRunningLocally then DateTime.UtcNow.AddDays(-5.) else timer.ScheduleStatus.Last
+
         let postToAll (payloadTeams: string) =
             let results =
                 [
@@ -620,11 +622,11 @@ module SocialsReport =
             match ctx.FunctionDefinition.Name with
             | "RepliesReport_Bluesky" ->
                 let title = $"{titleTemplate} Bluesky"
-                timer.ScheduleStatus.Last |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                lastInvocation |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
 
             | "RepliesReport_X" ->
                 let title = $"{titleTemplate} X"
-                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                lastInvocation |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
 
             | _ ->
                 failwith "Failed to determine function name from context."
