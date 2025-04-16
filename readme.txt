@@ -50,8 +50,15 @@ func start
 then hit the endpoint the console spits out, say http://localhost:7071/api/HttpExample
 
 option #2, dockerised:
-docker build --tag randomid/azurefunctionsimage:v1.0.0 .
-docker run -p 8080:80 -it randomid/azurefunctionsimage:v1.0.0
+- run the LocalSettings-to-EnvFile.fsx script to generate variables.env based on local.settings.json
+docker build --tag dev/ghiza:v1.0.0 .
+docker run --env-file variables.env -p 8080:80 -it dev/ghiza:v1.0.0
+
+
+docker pull mcr.microsoft.com/azure-storage/azurite
+
+
+
 then hit the endpoint over the mapped port, say http://localhost:8080/api/HttpExample
 
 Deployment

@@ -1,0 +1,29 @@
+version: '4.40'
+services:
+  ghiza:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ghiza
+    ports:
+      #- "7071:7071"
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    # env_file: variables.env
+    depends_on:
+      - azurite
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite
+    container_name: azurite
+    command: "azurite --loose --blobHost 0.0.0.0 --blobPort 10000 --queueHost 0.0.0.0 --queuePort 10001 --tableHost 0.0.0.0 --tablePort 10002"
+    # ports:
+    #   - "10000:10000"
+    #   - "10001:10001"
+    #   - "10002:10002"
+    volumes:
+      - azurite_data:/data
+
+volumes:
+  azurite_data:
