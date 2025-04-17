@@ -50,14 +50,12 @@ func start
 then hit the endpoint the console spits out, say http://localhost:7071/api/HttpExample
 
 option #2, dockerised:
+This runs docker-compose using two containers: (1) the app, (2) Azurite. This means we can't use the shorthand connection string for Azurite ("UseDevelopmentStorage=true").
+Replace it in local.settings.json with:
+	AzureWebJobsStorage="DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;"
+- make sure the 'azurite' DNS name in the connection string aligns with the the DNS name defined in the docker-compose script.
 - run the LocalSettings-to-EnvFile.fsx script to generate variables.env based on local.settings.json
-docker build --tag dev/ghiza:v1.0.0 .
-docker run --env-file variables.env -p 8080:80 -it dev/ghiza:v1.0.0
-
-
-docker pull mcr.microsoft.com/azure-storage/azurite
-
-
+- run "docker-compose up" (optionally with -d) - the docker-compose.yml file references the variables.env
 
 then hit the endpoint over the mapped port, say http://localhost:8080/api/HttpExample
 
