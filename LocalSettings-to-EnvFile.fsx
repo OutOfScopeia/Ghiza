@@ -1,11 +1,8 @@
-#r "nuget: System.Text.Json"
-
-open System
 open System.IO
 open System.Text.Json
 
 // Define the file paths
-let jsonFilePath = "local.settings.json"
+let jsonFilePath = ".\src\Ghiza.FunctionApp\local.settings.json"
 let envFilePath = "variables.env"
 
 // Read JSON file
@@ -22,7 +19,7 @@ let parseJson (jsonContent:string) =
     let mutable jelem = new JsonElement()
     if root.TryGetProperty("Values", &jelem) then
         root.GetProperty("Values").EnumerateObject()
-        |> Seq.map (fun kv -> $"{kv.Name}={kv.Value.GetString()}")
+        |> Seq.map (fun kv -> $"{kv.Name}=\"{kv.Value.GetString()}\"")
         |> Seq.toList
     else
         failwith "No 'Values' section found in JSON"
