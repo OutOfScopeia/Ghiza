@@ -2,7 +2,7 @@ open System.IO
 open System.Text.Json
 
 // Define the file paths
-let jsonFilePath = ".\src\Ghiza.FunctionApp\local.settings.json"
+let jsonFilePath = "local.settings.json"
 let envFilePath = "variables.env"
 
 // Read JSON file
