@@ -1,13 +1,10 @@
+name: ghiza-local-dev
 services:
   ghiza:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: ghiza
-    ports:
-      - "10000:10000"
-      - "10001:10001"
-      - "10002:10002"
     env_file: variables.env
     depends_on:
       - azurite
