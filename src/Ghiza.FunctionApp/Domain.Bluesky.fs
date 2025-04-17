@@ -7,6 +7,9 @@ open Domain
 open Slack
 open Cfg
 open System.Threading.Tasks
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Extensions.Logging
+
     // Namespace IDs
     module NSID =
         let root = "xrpc"
@@ -50,11 +53,15 @@ open System.Threading.Tasks
     let platformName = "Bluesky"
     
     // get author feed, scan all posts for new interactions (after 'last checked' timestamp).
-    let getNewReplies (lastInvocation:DateTime) =
-        // when in local dev env, stretch the lookback window
-        let lastInvocation = if isRunningLocally then lastInvocation.AddDays(-5.) else lastInvocation
+    let getNewReplies (ctx:FunctionContext) (lastInvocation:DateTime) =
+        let log = ctx.GetLogger<LogPoller>()
+        use _ = log.BeginScope($"{ctx.FunctionDefinition.Name} BS.getNewReplies")
         
-        let getReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
+        // when in local dev env, stretch the lookback window
+        let lastInvocation = if isRunningLocally then DateTime.UtcNow.AddDays(-5.) else lastInvocation
+        log.LogTrace($"lastInvocation: {lastInvocation}")
+        
+        let getThreadReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
 
         let fetchAuthorFeedPostIds (did:string) =
             async {
@@ -88,12 +95,19 @@ open System.Threading.Tasks
                     return
                         threads
                         |> Seq.ofArray
-                        |> Seq.collect getReplies
+                        |> Seq.collect getThreadReplies
                         |> Seq.map Reply.fromJson
                         |> Seq.filter (fun r -> r.CreatedAtUtc >= lastInvocation)
                         |> Seq.filter (fun r -> r.Author.Id <> blueskyDid)
                         |> Seq.sortBy (fun r -> r.RootPostUrl)
-                        |> fun replies -> if replies |> Seq.isEmpty then Error "No new replies found on Bluesky" else Ok replies
+                        |> fun replies ->
+                            if replies |> Seq.isEmpty
+                                then
+                                    log.LogTrace($"No new replies found on Bluesky")
+                                    Error "No new replies found on Bluesky"
+                                else
+                                    log.LogTrace($"Replies count: {replies |> Seq.length}")
+                                    Ok replies
                 with
                 | :? InvalidOperationException as ex -> return Error ex.Message
                 | :? HttpRequestException as ex -> return Error ex.Message

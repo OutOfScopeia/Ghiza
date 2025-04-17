@@ -617,16 +617,20 @@ module SocialsReport =
         //    | _ ->
         //        failwith "Failed to determine function name from context."
 
-        let payloadTeams =
+        let payloadTeams, payloadSlack =
             let titleTemplate = "New replies on"
             match ctx.FunctionDefinition.Name with
             | "RepliesReport_Bluesky" ->
+                let getNewReplies = ctx |> Bluesky.getNewReplies
                 let title = $"{titleTemplate} Bluesky"
-                lastInvocation |> Bluesky.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                timer.ScheduleStatus.Last |> getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
+                timer.ScheduleStatus.Last |> getNewReplies |> Result.map Bluesky.getSlackTableAsBlocks
 
             | "RepliesReport_X" ->
                 let title = $"{titleTemplate} X"
-                lastInvocation |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title)
+                //let getNewReplies = ctx |> X.getNewReplies
+                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
+                timer.ScheduleStatus.Last |> X.getNewReplies |> Result.map X.getSlackTableAsCodeBlock
 
             | _ ->
                 failwith "Failed to determine function name from context."
@@ -637,9 +641,9 @@ module SocialsReport =
 let runRepliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) =
     SocialsReport.runRepliesReport timer ctx
 
-[<Function("RepliesReport_X")>]
-let runRepliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) =
-    SocialsReport.runRepliesReport timer ctx
+//[<Function("RepliesReport_X")>]
+//let runRepliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) =
+//    SocialsReport.runRepliesReport timer ctx
 
 [<Function("SignIns")>]
 // Cron expression sourced from app settings: daily at 6PM "0 0 18 * * *"
