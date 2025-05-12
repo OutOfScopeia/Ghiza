@@ -1,0 +1,132 @@
+# name: Docker Image CI
+
+# on:
+#   push:
+#     branches: [ "master" ]
+#   pull_request:
+#     branches: [ "master" ]
+
+# jobs:
+
+#   build:
+
+#     runs-on: ubuntu-latest
+
+#     steps:
+#     - uses: actions/checkout@v4
+#     - name: Build the Docker image
+#       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
+
+name: Build amd Deploy to Azure Container Apps
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:  
+      # - name: Checkout repository
+      #   uses: actions/checkout@v4
+      - name: ACR build
+        id: acr
+        uses: azure/acr-build@v1
+        with:
+          service_principal: ${{ secrets.AZURE_CREDENTIALS.appId }}
+          service_principal_password: ${{ secrets.AZURE_CREDENTIALS.password }}
+          tenant: ${{ secrets.secrets.AZURE_CREDENTIALS.tenant }}
+          registry: ${{ variables.AZURE_CONTAINER_REGISTRY_NAME }}
+          repository: ghiza
+          image: ghiza
+          tag: latest
+          git_access_token: ${{ secrets.git_access_token }}
+          folder: ./
+          dockerfile: ./Dockerfile
+          branch: dev
+          build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
+
+
+
+
+      # - name: Log in to Azure
+      #   uses: azure/login@v2.3.0
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # - name: Authenticate with Azure Container Registry
+      #   run: az acr login --name ${{ variables.AZURE_CONTAINER_REGISTRY_NAME }}
+
+      # - name: Deploy to Azure Container Apps
+      #   uses: azure/container-apps-deploy-action@v1
+      #   with:
+      #     acrName: citregistry
+      #     imageToDeploy: ${{ variables.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
+      #     resourceGroup: ghiza-cae-dev
+      #     containerAppName: ghiza-app-dev
+
+
+
+
+
+
+
+# name: build_image
+# on:
+#   push:
+#     paths:
+#       - "src/docker/**"
+# jobs:
+#   build:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: ACR build
+#         id: acr
+#         uses: azure/acr-build@v1
+#         with:
+#           service_principal: ${{ secrets.service_principal }}
+#           service_principal_password: ${{ secrets.service_principal_password }}
+#           tenant: ${{ secrets.tenant }}
+#           registry: ${{ secrets.registry }}
+#           repository: ${{ secrets.repository }}
+#           image: image
+#           git_access_token: ${{ secrets.git_access_token }}
+#           folder: src/docker
+#           dockerfile: ../../dockerfiles/Dockerfile
+#           branch: main
+#           build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
+
+
+
+
+
+# checkout code
+# login to azure
+# build container
+# push container
+# run fsi deploy script
+
+
+
+
+# name: Run F# Script
+
+# on: [push]
+
+# jobs:
+#   run-fsharp-script:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+
+#       - name: Install .NET SDK
+#         run: |
+#           wget https://dot.net/v1/dotnet-install.sh
+#           chmod +x dotnet-install.sh
+#           ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
+#           echo "$HOME/dotnet" >> $GITHUB_PATH
+
+#       - name: Run F# script
+#         run: dotnet fsi myscript.fsx
