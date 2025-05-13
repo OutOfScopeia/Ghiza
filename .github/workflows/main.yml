@@ -17,7 +17,7 @@
 #     - name: Build the Docker image
 #       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
 
-name: Build amd Deploy to Azure Container Apps
+name: Build and Deploy to Azure Container Apps
 
 on:
   push:
@@ -48,7 +48,7 @@ jobs:
           folder: ./
           dockerfile: ./Dockerfile
           branch: ${{ env.BRANCH }}
-          build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
+          # build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
 
 
