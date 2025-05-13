@@ -43,7 +43,7 @@ jobs:
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
-          # tag: BRANCH
+          tag: ${{ env.BRANCH }}
           # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
