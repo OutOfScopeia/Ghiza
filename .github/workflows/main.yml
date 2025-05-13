@@ -26,7 +26,7 @@ on:
 
 env:
   BRANCH: ${{ github.ref_name }}
-  HASH: $(echo ${{ github.sha }} | cut -c1-8)
+  HASH: ${{ (echo ${{ github.sha }} | cut -c1-8) }}
 jobs:
   build:
     runs-on: ubuntu-latest
