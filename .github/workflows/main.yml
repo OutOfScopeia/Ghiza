@@ -34,14 +34,14 @@ jobs:
         id: acr
         uses: azure/acr-build@v1
         with:
-          service_principal: ${{ secrets.AZURE_CREDENTIALS.appId }}
-          service_principal_password: ${{ secrets.AZURE_CREDENTIALS.password }}
-          tenant: ${{ secrets.AZURE_CREDENTIALS.tenant }}
+          service_principal: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+          service_principal_password: ${{ fromJson(secrets.AZURE_CREDENTIALS).password }}
+          tenant: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
           tag: latest
-          git_access_token: ${{ secrets.git_access_token }}
+          # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
           branch: dev
