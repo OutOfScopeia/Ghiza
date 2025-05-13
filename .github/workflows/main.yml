@@ -24,6 +24,9 @@ on:
     branches:
       - dev
 
+env:
+  BRANCH: ${{ github.ref_name }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -40,11 +43,11 @@ jobs:
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
-          tag: latest
+          # tag: BRANCH
           # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
-          branch: dev
+          branch: $BRANCH
           build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
 
