@@ -27,7 +27,7 @@ on:
 env:
   BRANCH: ${{ github.ref_name }}
   HASH: ${{ github.sha }}
-  TAG: $BRANCH-$HASH
+  TAG: ${BRANCH}-${HASH}
 jobs:
   build:
     runs-on: ubuntu-latest
