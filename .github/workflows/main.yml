@@ -27,6 +27,7 @@ on:
 env:
   BRANCH: ${{ github.ref_name }}
   HASH: ${{ github.sha }}
+  TAG: ${{ env.BRANCH }}-${{ env.HASH }}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,11 +44,11 @@ jobs:
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
-          tag: ${{ env.BRANCH }}-${{ env.HASH }}
-          # git_access_token: ${{ secrets.git_access_token }}
+          tag: ${{ env.TAG }}
           folder: ./
           dockerfile: ./Dockerfile
           branch: ${{ env.BRANCH }}
+          # git_access_token: ${{ secrets.git_access_token }}
           # build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
 
