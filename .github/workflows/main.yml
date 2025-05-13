@@ -47,7 +47,7 @@ jobs:
           # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
-          branch: $BRANCH
+          branch: dev
           build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
 
