@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
@@ -24,6 +24,7 @@
 	<PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Properties\launchSettings.json" />
     <Compile Include="Config.fs" />
     <Compile Include="Domain.fs" />
     <Compile Include="Domain.Slack.fs" />

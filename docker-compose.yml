@@ -1,4 +1,4 @@
-name: ghiza-local-dev
+name: ghiza
 services:
   ghiza:
     build:
