@@ -36,8 +36,8 @@ jobs:
         with:
           service_principal: ${{ secrets.AZURE_CREDENTIALS.appId }}
           service_principal_password: ${{ secrets.AZURE_CREDENTIALS.password }}
-          tenant: ${{ secrets.secrets.AZURE_CREDENTIALS.tenant }}
-          registry: ${{ AZURE_CONTAINER_REGISTRY_NAME }}
+          tenant: ${{ secrets.AZURE_CREDENTIALS.tenant }}
+          registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
           tag: latest
@@ -56,13 +56,13 @@ jobs:
       #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       # - name: Authenticate with Azure Container Registry
-      #   run: az acr login --name ${{ AZURE_CONTAINER_REGISTRY_NAME }}
+      #   run: az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
 
       # - name: Deploy to Azure Container Apps
       #   uses: azure/container-apps-deploy-action@v1
       #   with:
       #     acrName: citregistry
-      #     imageToDeploy: ${{ AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
+      #     imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
       #     resourceGroup: ghiza-cae-dev
       #     containerAppName: ghiza-app-dev
 
