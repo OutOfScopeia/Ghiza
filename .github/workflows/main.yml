@@ -43,11 +43,11 @@ jobs:
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
-          tag: ${{ env.BRANCH }}
+          tag: ${{ env.BRANCH }}-${{ github.sha:0:8 }}"
           # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
-          branch: dev
+          branch: env.BRANCH
           build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
 
