@@ -26,7 +26,7 @@ on:
 
 env:
   BRANCH: ${{ github.ref_name }}
-  HASH: ${{ (echo ${{ github.sha }} | cut -c1-8) }}
+  HASH: ${{ github.sha }}
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -43,7 +43,7 @@ jobs:
           registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
           repository: ghiza
           image: ghiza
-          tag: ${{ env.BRANCH }}-${{ env.HASH }}"
+          tag: ${{ env.BRANCH }}-${{ env.HASH }}
           # git_access_token: ${{ secrets.git_access_token }}
           folder: ./
           dockerfile: ./Dockerfile
