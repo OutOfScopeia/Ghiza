@@ -1,5 +1,8 @@
 name: Deploy App With Farmer Script (OIDC)
 
+permissions:
+  id-token: write
+
 on:
   workflow_dispatch:
   workflow_run:
