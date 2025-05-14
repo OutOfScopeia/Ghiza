@@ -2,11 +2,10 @@ name: Deploy App With Farmer Script
 
 on:
   workflow_dispatch:
-  # workflow_run:
-  #   workflows: ["Build and Deploy to Azure Container Apps"]
-  #   types:
-  #     - completed
-
+  workflow_run:
+    workflows: ["Build and Deploy to Azure Container Apps"]
+    types:
+      - completed
 
 env:
   BRANCH: ${{ github.ref_name }}
