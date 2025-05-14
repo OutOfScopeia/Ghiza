@@ -51,73 +51,28 @@ jobs:
           # git_access_token: ${{ secrets.git_access_token }}
           # build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
 
+          
+          # - name: Authenticate with Azure Container Registry
+          #   run: az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+          
+          # - name: Deploy to Azure Container Apps
+          #   uses: azure/container-apps-deploy-action@v1
+          #   with:
+            #     acrName: citregistry
+            #     imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
+            #     resourceGroup: ghiza-cae-dev
+            #     containerAppName: ghiza-app-dev
+            
+            deploy:
+              steps:
+                - name: Log in to Azure
+                  uses: azure/login@v2.3.0
+                  with:
+                    creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-
-
-      # - name: Log in to Azure
-      #   uses: azure/login@v2.3.0
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # - name: Authenticate with Azure Container Registry
-      #   run: az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
-
-      # - name: Deploy to Azure Container Apps
-      #   uses: azure/container-apps-deploy-action@v1
-      #   with:
-      #     acrName: citregistry
-      #     imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
-      #     resourceGroup: ghiza-cae-dev
-      #     containerAppName: ghiza-app-dev
-
-
-
-
-
-
-
-# name: build_image
-# on:
-#   push:
-#     paths:
-#       - "src/docker/**"
-# jobs:
-#   build:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: ACR build
-#         id: acr
-#         uses: azure/acr-build@v1
-#         with:
-#           service_principal: ${{ secrets.service_principal }}
-#           service_principal_password: ${{ secrets.service_principal_password }}
-#           tenant: ${{ secrets.tenant }}
-#           registry: ${{ secrets.registry }}
-#           repository: ${{ secrets.repository }}
-#           image: image
-#           git_access_token: ${{ secrets.git_access_token }}
-#           folder: src/docker
-#           dockerfile: ../../dockerfiles/Dockerfile
-#           branch: main
-#           build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
-
-
-
-
-
-# checkout code
-# login to azure
-# build container
-# push container
-# run fsi deploy script
-
-
-
-
-# name: Run F# Script
-
-# on: [push]
-
+                - name: "Deploy Azure Resources with Farmer script"
+                  run: dotnet fsi deploy.fsx
+                
 # jobs:
 #   run-fsharp-script:
 #     runs-on: ubuntu-latest
