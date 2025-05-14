@@ -15,27 +15,27 @@ env:
   BRANCH: ${{ github.ref_name }}
   HASH: ${{ github.sha }}
   TAG: ${{ github.ref_name }}-${{ github.sha }}
-
+  
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:  
-      - name: Log in to Azure
-        uses: azure/login@v2.3.0
-        with:
-          client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-          tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
-          subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Log in to Azure
+      uses: azure/login@v2.3.0
+      with:
+        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
-      - name: "Deploy Azure Resources with Farmer script"
-        run: dotnet fsi deploy.fsx
+    - name: "Deploy Azure Resources with Farmer script"
+      run: dotnet fsi deploy.fsx
                 
 # jobs:
 #   run-fsharp-script:
 #     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
 
 #       - name: Install .NET SDK
 #         run: |
