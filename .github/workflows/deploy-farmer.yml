@@ -1,4 +1,4 @@
-name: Deploy App With Farmer Script
+name: Deploy App With Farmer Script (OIDC)
 
 on:
   workflow_dispatch:
@@ -19,7 +19,9 @@ jobs:
       - name: Log in to Azure
         uses: azure/login@v2.3.0
         with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+          client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+          tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+          subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
       - name: "Deploy Azure Resources with Farmer script"
         run: dotnet fsi deploy.fsx
