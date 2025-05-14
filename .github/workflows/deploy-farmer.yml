@@ -1,14 +1,15 @@
 name: Deploy App With Farmer Script (OIDC)
 
-permissions:
-  id-token: write
-
 on:
   workflow_dispatch:
   workflow_run:
     workflows: ["Build and Deploy to Azure Container Apps"]
     types:
       - completed
+
+permissions:
+  id-token: write
+  contents: read
 
 env:
   BRANCH: ${{ github.ref_name }}
