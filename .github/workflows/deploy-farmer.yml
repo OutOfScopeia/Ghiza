@@ -22,7 +22,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-      
+
+    - name: Install .NET SDK
+      run: |
+        wget https://dot.net/v1/dotnet-install.sh
+        chmod +x dotnet-install.sh
+        ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
+        echo "$HOME/dotnet" >> $GITHUB_PATH
+
     - name: Log in to Azure
       uses: azure/login@v2.3.0
       with:
