@@ -71,19 +71,19 @@ jobs:
       - name: "Deploy Azure Resources with Farmer script"
         run: dotnet fsi deploy.fsx
                 
-# jobs:
-#   run-fsharp-script:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
+jobs:
+  run-fsharp-script:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-#       - name: Install .NET SDK
-#         run: |
-#           wget https://dot.net/v1/dotnet-install.sh
-#           chmod +x dotnet-install.sh
-#           ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
-#           echo "$HOME/dotnet" >> $GITHUB_PATH
+      - name: Install .NET SDK
+        run: |
+          wget https://dot.net/v1/dotnet-install.sh
+          chmod +x dotnet-install.sh
+          ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
+          echo "$HOME/dotnet" >> $GITHUB_PATH
 
-#       - name: Run F# script
-#         run: dotnet fsi myscript.fsx
+      - name: Run F# script
+        run: dotnet fsi myscript.fsx
