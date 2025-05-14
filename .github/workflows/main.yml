@@ -63,10 +63,10 @@ jobs:
             #     resourceGroup: ghiza-cae-dev
             #     containerAppName: ghiza-app-dev
             
-      - name: Log in to Azure
-        uses: azure/login@v2.3.0
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+      # - name: Log in to Azure
+      #   uses: azure/login@v2.3.0
+      #   with:
+      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: "Deploy Azure Resources with Farmer script"
         run: dotnet fsi deploy.fsx
