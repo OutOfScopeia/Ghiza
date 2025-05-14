@@ -23,12 +23,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    - name: Install .NET SDK
-      run: |
-        wget https://dot.net/v1/dotnet-install.sh
-        chmod +x dotnet-install.sh
-        ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
-        echo "$HOME/dotnet" >> $GITHUB_PATH
+    - name: Setup .NET SDK 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Verify .NET installation
+      run: dotnet --info
 
     - name: Log in to Azure
       uses: azure/login@v2.3.0
