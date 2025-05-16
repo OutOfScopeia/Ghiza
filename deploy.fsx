@@ -6,6 +6,12 @@ open Farmer.Builders
 open System
 open System.IO
 open System.Text.Json
+open System.Collections
+
+let envVars = Environment.GetEnvironmentVariables()
+for entry in envVars do
+    let de = entry :?> DictionaryEntry
+    printfn "%s = %s" (de.Key.ToString()) (de.Value.ToString())
 
 let product = "ghiza"
 let env =
