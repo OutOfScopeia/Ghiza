@@ -17,8 +17,10 @@ env:
   TAG: ${{ github.ref_name }}-${{ github.sha }}
   
 jobs:
-  deploy:
+  deploy-test:
     runs-on: ubuntu-latest
+    environment:
+      name: TEST
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -40,17 +42,30 @@ jobs:
 
     - name: "Deploy Azure Resources with Farmer script"
       run: dotnet fsi deploy.fsx
-                
-# jobs:
-#   run-fsharp-script:
-#     runs-on: ubuntu-latest
 
-#       - name: Install .NET SDK
-#         run: |
-#           wget https://dot.net/v1/dotnet-install.sh
-#           chmod +x dotnet-install.sh
-#           ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
-#           echo "$HOME/dotnet" >> $GITHUB_PATH
+  deploy-live:
+    runs-on: ubuntu-latest
+    environment:
+      name: LIVE
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
 
-#       - name: Run F# script
-#         run: dotnet fsi myscript.fsx
+    - name: Setup .NET SDK 9.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Verify .NET installation
+      run: dotnet --info
+
+    - name: Log in to Azure
+      uses: azure/login@v2.3.0
+      with:
+        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
+        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+
+    - name: "Deploy Azure Resources with Farmer script"
+      run: dotnet fsi deploy.fsx
+
