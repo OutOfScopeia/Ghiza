@@ -9,7 +9,11 @@ open System.Text.Json
 
 let product = "ghiza"
 let env =
-    match Environment.GetEnvironmentVariable "GITHUB_REF_NAME" with
+    let branch =
+        (Environment.GetEnvironmentVariable "GITHUB_REF").Split "/"
+        |> Array.last
+        
+    match branch with
     | "master"
     | "main" -> "live"
     | _ -> "test"
