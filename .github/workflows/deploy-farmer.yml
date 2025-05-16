@@ -12,7 +12,8 @@ permissions:
   contents: read
 
 env:
-  BRANCH: ${{ github.ref_name }}
+  #BRANCH: ${{ github.ref_name }}
+  BRANCH: ${GITHUB_REF#refs/heads/}
   HASH: ${{ github.sha }}
   TAG: ${{ github.ref_name }}-${{ github.sha }}
   
