@@ -9,7 +9,7 @@ open System.Text.Json
 
 let product = "ghiza"
 let env =
-    match (Environment.GetEnvironmentVariable "BRANCH").ToLower() with
+    match Environment.GetEnvironmentVariable "BRANCH" with
     | "master"
     | "main" -> "live"
     | _ -> "test"
