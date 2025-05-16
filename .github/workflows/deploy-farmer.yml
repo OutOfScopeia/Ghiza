@@ -25,6 +25,10 @@ jobs:
     environment:
       name: TEST
     env:
+      X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
       CRON_REPLIES_REPORT_BLUESKY: ${{ vars.CRON_REPLIES_REPORT_BLUESKY }}
       CRON_REPLIES_REPORT_X: ${{ vars.CRON_REPLIES_REPORT_X }}
@@ -67,6 +71,10 @@ jobs:
     environment:
       name: LIVE
     env:
+      X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
       CRON_REPLIES_REPORT_BLUESKY: ${{ vars.CRON_REPLIES_REPORT_BLUESKY }}
       CRON_REPLIES_REPORT_X: ${{ vars.CRON_REPLIES_REPORT_X }}
