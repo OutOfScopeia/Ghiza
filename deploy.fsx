@@ -9,7 +9,7 @@ open System.Text.Json
 
 let product = "ghiza"
 let env =
-    match Environment.GetEnvironmentVariable "BRANCH" with
+    match Environment.GetEnvironmentVariable "GITHUB_REF_NAME" with
     | "master"
     | "main" -> "live"
     | _ -> "test"
