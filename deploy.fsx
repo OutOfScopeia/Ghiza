@@ -6,14 +6,41 @@ open Farmer.Builders
 open System
 open System.IO
 open System.Text.Json
-open System.Collections
 
-let envVars = Environment.GetEnvironmentVariables()
-for entry in envVars do
-    let de = entry :?> DictionaryEntry
-    printfn "%s = %s" (de.Key.ToString()) (de.Value.ToString())
+[<AutoOpen>]
+module Cfg =
+    // probably not needed
+    // "APPINSIGHTS_INSTRUMENTATIONKEY" ai.InstrumentationKey.Value
+    // "APPLICATIONINSIGHTS_CONNECTION_STRING" "InstrumentationKey=838c35a7-8b49-42f4-bd77-e3296dc8aa38;IngestionEndpoint=https://uksouth-1.in.applicationinsights.azure.com/;LiveEndpoint=https://uksouth.livediagnostics.monitor.azure.com/;ApplicationId=cf1bf99d-e4ce-45bb-80e4-d81789d8c213"
+    // "AzureWebJobsStorage"  "AZURE_STORAGE_CONNECTION_STRING"
+    // "FUNCTIONS_WORKER_RUNTIME" "dotnet-isolated"
+    // "SCM_DO_BUILD_DURING_DEPLOYMENT" "0"
+    // "FUNCTIONS_EXTENSION_VERSION" "~4"
+    // "WEBSITE_RUN_FROM_PACKAGE" "https://citmaintenance.blob.core.windows.net/function-releases/20250417033429-cae111ec29a7f855d6bb8708fc0ecac5.zip?sv=2025-01-05&st=2025-04-17T03%3A29%3A34Z&se=2035-04-17T03%3A34%3A34Z&sr=b&sp=r&sig=UxuZeU6zwkKGkQ1SAMGd%2B8dwabFrYCG2lKrzTHYCtko%3D"
+    // "WORKSPACE_ID" "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
 
-let product = "ghiza"
+    // env-agnostic
+    let AZURE_CONTAINER_REGISTRY_NAME = Environment.GetEnvironmentVariable "AZURE_CONTAINER_REGISTRY_NAME"
+    let X_BEARER_TOKEN = Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
+    let TENANT_ID = Environment.GetEnvironmentVariable "GHIZA_TENANT_ID"
+    let CLIENT_ID = Environment.GetEnvironmentVariable "GHIZA_CLIENT_ID"
+    let CLIENT_SECRET = Environment.GetEnvironmentVariable "GHIZA_CLIENT_SECRET"
+    let BLUESKY_AT_IDENTIFIER = Environment.GetEnvironmentVariable "BLUESKY_AT_IDENTIFIER"
+    let X_HANDLE = Environment.GetEnvironmentVariable "X_HANDLE"
+    // env-specific
+    let CRON_CREATED_SERVICE_PRINCIPALS = Environment.GetEnvironmentVariable "CRON_CREATED_SERVICE_PRINCIPALS"
+    let CRON_REPLIES_REPORT_BLUESKY = Environment.GetEnvironmentVariable "CRON_REPLIES_REPORT_BLUESKY"
+    let CRON_REPLIES_REPORT_X = Environment.GetEnvironmentVariable "CRON_REPLIES_REPORT_X"
+    let CRON_SIGNINS = Environment.GetEnvironmentVariable "CRON_SIGNINS"
+    let CRON_STALE_SERVICE_PRINCIPALS = Environment.GetEnvironmentVariable "CRON_STALE_SERVICE_PRINCIPALS"
+    let LOOKBACK_MINUTES_SIGNINS = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SIGNINS"
+    let LOOKBACK_MINUTES_SPCREATIONS = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SPCREATIONS"
+    let SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK = Environment.GetEnvironmentVariable "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK"
+    let SLACK_SOCIALS_CHANNEL_WEBHOOK = Environment.GetEnvironmentVariable "SLACK_SOCIALS_CHANNEL_WEBHOOK"
+    let TEAMS_MONITORING_CHANNEL_WEBHOOK = Environment.GetEnvironmentVariable "TEAMS_MONITORING_CHANNEL_WEBHOOK"
+    let TEAMS_SOCIALS_CHANNEL_WEBHOOK = Environment.GetEnvironmentVariable "TEAMS_SOCIALS_CHANNEL_WEBHOOK"
+
+let solutionName = "ghiza"
 let env =
     let branch =
         Environment.GetEnvironmentVariable "GITHUB_REF_NAME"
@@ -23,73 +50,57 @@ let env =
     | "main" -> "live"
     | _ -> "test"
 
-let acrName = Environment.GetEnvironmentVariable "AZURE_CONTAINER_REGISTRY_NAME"
-
-//let containerEnvVars : seq<string*string> = Seq.empty
+let acrName = AZURE_CONTAINER_REGISTRY_NAME
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
 
 let law = logAnalytics {
-    name $"{product}-{env}-law"
+    name $"{solutionName}-{env}-law"
 }
 
 let ai = appInsights {
-    name $"{product}-{env}-ai"
+    name $"{solutionName}-{env}-ai"
     log_analytics_workspace law
 }
     
 let container = container {
-    name $"{product}-{env}-container"
+    name $"{solutionName}-{env}-container"
     private_docker_image "citregistry.azurecr.io" "ghiza" "latest"
     cpu_cores 0.5<VCores>
     memory 1.0<Gb>
 }
 
 let cApp = containerApp {
-    name $"{product}-{env}-app"
+    name $"{solutionName}-{env}-app"
     system_identity
-
     reference_registry_credentials [
             ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName acrName, "cit-shared")
         ]
-
     add_containers [ container ]
     replicas 1 1 
     add_env_variables [
-        // probably not needed
-        // add_env_variable "APPINSIGHTS_INSTRUMENTATIONKEY" ai.InstrumentationKey.Value
-        // add_env_variable "APPLICATIONINSIGHTS_CONNECTION_STRING" "InstrumentationKey=838c35a7-8b49-42f4-bd77-e3296dc8aa38;IngestionEndpoint=https://uksouth-1.in.applicationinsights.azure.com/;LiveEndpoint=https://uksouth.livediagnostics.monitor.azure.com/;ApplicationId=cf1bf99d-e4ce-45bb-80e4-d81789d8c213"
-        // add_env_variable "AzureWebJobsStorage" (Environment.GetEnvironmentVariable "AZURE_STORAGE_CONNECTION_STRING")
-        // add_env_variable "FUNCTIONS_WORKER_RUNTIME" "dotnet-isolated"
-        // add_env_variable "SCM_DO_BUILD_DURING_DEPLOYMENT" "0"
-        // add_env_variable "FUNCTIONS_EXTENSION_VERSION" "~4"
-        // add_env_variable "WEBSITE_RUN_FROM_PACKAGE"     "https://citmaintenance.blob.core.windows.net/function-releases/20250417033429-cae111ec29a7f855d6bb8708fc0ecac5.zip?sv=2025-01-05&st=2025-04-17T03%3A29%3A34Z&se=2035-04-17T03%3A34%3A34Z&sr=b&sp=r&sig=UxuZeU6zwkKGkQ1SAMGd%2B8dwabFrYCG2lKrzTHYCtko%3D"
-        // add_env_variable "WORKSPACE_ID"     "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
-        
-        // env-agnostic
-        "X_BEARER_TOKEN", Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
-        "TENANT_ID", Environment.GetEnvironmentVariable "GHIZA_TENANT_ID"
-        "CLIENT_ID", Environment.GetEnvironmentVariable "GHIZA_CLIENT_ID"
-        "CLIENT_SECRET", Environment.GetEnvironmentVariable "GHIZA_CLIENT_SECRET"
-        "BLUESKY_AT_IDENTIFIER", "did:plc:gtprayz574c2sc4ek27mnlfy"
-        "X_HANDLE", "compositionalit"
-        // env-specific
-        "CRON_CREATED_SERVICE_PRINCIPALS", "0 0 18 * * *"
-        "CRON_REPLIES_REPORT_BLUESKY", "0 * * * *"
-        "CRON_REPLIES_REPORT_X", "0 * * * *"
-        "CRON_SIGNINS", "0 0 18 * * *"
-        "CRON_STALE_SERVICE_PRINCIPALS", "0 0 10 * * 1"
-        "LOOKBACK_MINUTES_SIGNINS", "1450"
-        "LOOKBACK_MINUTES_SPCREATIONS", "1450"
-        "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK", "https://hooks.slack.com/services/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"
-        "SLACK_SOCIALS_CHANNEL_WEBHOOK", "https://hooks.slack.com/services/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"
-        "TEAMS_MONITORING_CHANNEL_WEBHOOK", "https://compositionalit.webhook.office.com/webhookb2/8a59ebec-7413-432c-9023-f4eb8848a166@bb7f7453-15af-4ab0-9d45-cdb4a56293bc/IncomingWebhook/c02b2dfced054c7e9f129ad8d286faf9/85a19aa4-10bd-4e8b-bf08-357d993a93b5/V2GkOavnPecI0QkcgUOdsbMBkblpl4OwgUKBEVgQ51qPE1"
-        "TEAMS_SOCIALS_CHANNEL_WEBHOOK", "https://prod-129.westeurope.logic.azure.com:443/workflows/9529e1f3fa5841958ce7a06e0d6c31d7/triggers/manual/paths/invoke?api-version=2016-06-01&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Z4xpQ8HFitd9A_uMDE8Zyv0zBqXXSEqD5DFPBvSg2fs"
+        "X_BEARER_TOKEN", X_BEARER_TOKEN
+        "TENANT_ID", TENANT_ID
+        "CLIENT_ID", CLIENT_ID
+        "CLIENT_SECRET", CLIENT_SECRET
+        "BLUESKY_AT_IDENTIFIER", BLUESKY_AT_IDENTIFIER
+        "X_HANDLE", X_HANDLE
+        "CRON_CREATED_SERVICE_PRINCIPALS", CRON_CREATED_SERVICE_PRINCIPALS
+        "CRON_REPLIES_REPORT_BLUESKY", CRON_REPLIES_REPORT_BLUESKY
+        "CRON_REPLIES_REPORT_X", CRON_REPLIES_REPORT_X
+        "CRON_SIGNINS", CRON_SIGNINS
+        "CRON_STALE_SERVICE_PRINCIPALS", CRON_STALE_SERVICE_PRINCIPALS
+        "LOOKBACK_MINUTES_SIGNINS", LOOKBACK_MINUTES_SIGNINS
+        "LOOKBACK_MINUTES_SPCREATIONS", LOOKBACK_MINUTES_SPCREATIONS
+        "SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK", SLACK_AZURE_ALERTS_CHANNEL_WEBHOOK
+        "SLACK_SOCIALS_CHANNEL_WEBHOOK", SLACK_SOCIALS_CHANNEL_WEBHOOK
+        "TEAMS_MONITORING_CHANNEL_WEBHOOK", TEAMS_MONITORING_CHANNEL_WEBHOOK
+        "TEAMS_SOCIALS_CHANNEL_WEBHOOK", TEAMS_SOCIALS_CHANNEL_WEBHOOK
     ]
 }
 
 let cae = containerEnvironment {
-    name $"{product}-{env}-cae"
+    name $"{solutionName}-{env}-cae"
     app_insights_instance ai
     add_container cApp
 }
@@ -99,7 +110,6 @@ let deployment = arm {
     add_resource cae
     add_resource law
     add_resource ai
-    //add_resource cApp
 }
 
-deployment |> Deploy.execute $"{product}-{env}" Deploy.NoParameters
+deployment |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
