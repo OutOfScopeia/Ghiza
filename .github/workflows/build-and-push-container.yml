@@ -1,39 +1,22 @@
-# name: Docker Image CI
-
-# on:
-#   push:
-#     branches: [ "master" ]
-#   pull_request:
-#     branches: [ "master" ]
-
-# jobs:
-
-#   build:
-
-#     runs-on: ubuntu-latest
-
-#     steps:
-#     - uses: actions/checkout@v4
-#     - name: Build the Docker image
-#       run: docker build . --file Dockerfile --tag my-image-name:$(date +%s)
-
-name: Build and Deploy to Azure Container Apps
-
+name: Build and Push with ACR
 on:
   push:
     branches:
-      - dev
+      - '*'
+    paths:
+      - 'src/**'
+      - 'Dockerfile'
+      - 'Ghiza.sln'
+      - 'global.json'
+      - '.github/workflows/build-and-push-container.yml'
+  workflow_dispatch:
 
 env:
-  BRANCH: ${{ github.ref_name }}
-  HASH: ${{ github.sha }}
   TAG: ${{ github.ref_name }}-${{ github.sha }}
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:  
-      # - name: Checkout repository
-      #   uses: actions/checkout@v4
       - name: ACR build
         id: acr
         uses: azure/acr-build@v1
@@ -47,43 +30,5 @@ jobs:
           tag: ${{ env.TAG }}
           folder: ./
           dockerfile: ./Dockerfile
-          branch: ${{ env.BRANCH }}
+          branch: ${{ github.ref_name }}
           # git_access_token: ${{ secrets.git_access_token }}
-          # build_args: '[{"arg_one":"value_one"}, {"arg_two":"value_two"}]'
-
-          
-          # - name: Authenticate with Azure Container Registry
-          #   run: az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
-          
-          # - name: Deploy to Azure Container Apps
-          #   uses: azure/container-apps-deploy-action@v1
-          #   with:
-            #     acrName: citregistry
-            #     imageToDeploy: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/ghiza:latest
-            #     resourceGroup: ghiza-cae-dev
-            #     containerAppName: ghiza-app-dev
-            
-      # - name: Log in to Azure
-      #   uses: azure/login@v2.3.0
-      #   with:
-      #     creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      # - name: "Deploy Azure Resources with Farmer script"
-      #   run: dotnet fsi deploy.fsx
-                
-# jobs:
-#   run-fsharp-script:
-#     runs-on: ubuntu-latest
-#     steps:
-#       - name: Checkout repository
-#         uses: actions/checkout@v4
-
-#       - name: Install .NET SDK
-#         run: |
-#           wget https://dot.net/v1/dotnet-install.sh
-#           chmod +x dotnet-install.sh
-#           ./dotnet-install.sh --install-dir $HOME/dotnet --version latest
-#           echo "$HOME/dotnet" >> $GITHUB_PATH
-
-#       - name: Run F# script
-#         run: dotnet fsi myscript.fsx
