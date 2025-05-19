@@ -1,12 +1,9 @@
 name: Deploy App With Farmer Script (OIDC)
 
 on:
-  push:
-    branches:
-      - dev
   workflow_dispatch:
   workflow_run:
-    workflows: ["Build and Deploy to Azure Container Apps"]
+    workflows: ["Build and Push to ACR (OIDC)"]
     types:
       - completed
 
