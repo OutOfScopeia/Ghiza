@@ -22,7 +22,7 @@ jobs:
     environment:
       name: TEST
     env:
-      ENVIRONMENT: ${{ github.job.environment.name }}
+      ENVIRONMENT: TEST
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
@@ -72,7 +72,7 @@ jobs:
     environment:
       name: LIVE
     env:
-      ENVIRONMENT: ${{ github.job.environment.name }}
+      ENVIRONMENT: LIVE
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
