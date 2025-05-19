@@ -20,6 +20,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    environment:
+      name: TEST
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
