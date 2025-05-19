@@ -16,10 +16,10 @@ module Cfg =
     // "AzureWebJobsStorage"  "AZURE_STORAGE_CONNECTION_STRING"
     // "FUNCTIONS_WORKER_RUNTIME" "dotnet-isolated"
     // "SCM_DO_BUILD_DURING_DEPLOYMENT" "0"
-    // "FUNCTIONS_EXTENSION_VERSION" "~4"
     // "WEBSITE_RUN_FROM_PACKAGE" "https://citmaintenance.blob.core.windows.net/function-releases/20250417033429-cae111ec29a7f855d6bb8708fc0ecac5.zip?sv=2025-01-05&st=2025-04-17T03%3A29%3A34Z&se=2035-04-17T03%3A34%3A34Z&sr=b&sp=r&sig=UxuZeU6zwkKGkQ1SAMGd%2B8dwabFrYCG2lKrzTHYCtko%3D"
     // "WORKSPACE_ID" "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
-
+    let FUNCTIONS_EXTENSION_VERSION = "~4"
+    let WEBSITES_PORT = "8080"
     // env-agnostic
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
@@ -85,6 +85,9 @@ let cApp = containerApp {
     replicas 1 1
     
     add_env_variables [
+        "FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
+        "WEBSITES_PORT", WEBSITES_PORT
+
         "ENVIRONMENT", ENVIRONMENT
         "X_BEARER_TOKEN", X_BEARER_TOKEN
         "TENANT_ID", TENANT_ID
