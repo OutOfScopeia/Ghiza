@@ -589,6 +589,7 @@ module SocialsReport =
 
         let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
 
+
         let payloadTeams, payloadSlack =
             let titleTemplate = "New replies on"
             match ctx.FunctionDefinition.Name with
