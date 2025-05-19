@@ -1,11 +1,11 @@
 name: Deploy App With Farmer Script (OIDC)
 
 on:
-  workflow_dispatch:
   workflow_run:
     workflows: ["Build and Push to ACR (OIDC)"]
     types:
       - completed
+  workflow_dispatch:
 
 permissions:
   id-token: write
