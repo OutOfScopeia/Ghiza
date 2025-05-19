@@ -19,9 +19,10 @@ jobs:
   deploy-test:
     runs-on: ubuntu-latest
     if: github.ref_name != 'master'
-    environment: TEST
+    environment:
+      name: TEST
     env:
-      ENVIRONMENT: ${{ github.job.environment }}
+      ENVIRONMENT: ${{ github.job.environment.name }}
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
@@ -68,9 +69,10 @@ jobs:
   deploy-live:
     runs-on: ubuntu-latest
     if: github.ref_name == 'master'
-    environment: LIVE
+    environment:
+      name: LIVE
     env:
-      ENVIRONMENT: ${{ github.job.environment }}
+      ENVIRONMENT: ${{ github.job.environment.name }}
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
