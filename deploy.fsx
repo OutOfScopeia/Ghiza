@@ -20,7 +20,7 @@ module Cfg =
     // "WORKSPACE_ID" "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
 
     // env-agnostic
-    let AZURE_CONTAINER_REGISTRY_NAME = Environment.GetEnvironmentVariable "AZURE_CONTAINER_REGISTRY_NAME"
+    let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let X_BEARER_TOKEN = Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
     let TENANT_ID = Environment.GetEnvironmentVariable "GHIZA_TENANT_ID"
     let CLIENT_ID = Environment.GetEnvironmentVariable "GHIZA_CLIENT_ID"
@@ -50,7 +50,7 @@ let env =
     | "main" -> "live"
     | _ -> "test"
 
-let acrName = AZURE_CONTAINER_REGISTRY_NAME
+let acrName = ACR_NAME
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
 
