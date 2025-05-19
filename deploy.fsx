@@ -28,6 +28,7 @@ module Cfg =
     let BLUESKY_AT_IDENTIFIER = Environment.GetEnvironmentVariable "BLUESKY_AT_IDENTIFIER"
     let X_HANDLE = Environment.GetEnvironmentVariable "X_HANDLE"
     // env-specific
+    let ENVIRONMENT = Environment.GetEnvironmentVariable "ENVIRONMENT"
     let CRON_CREATED_SERVICE_PRINCIPALS = Environment.GetEnvironmentVariable "CRON_CREATED_SERVICE_PRINCIPALS"
     let CRON_REPLIES_REPORT_BLUESKY = Environment.GetEnvironmentVariable "CRON_REPLIES_REPORT_BLUESKY"
     let CRON_REPLIES_REPORT_X = Environment.GetEnvironmentVariable "CRON_REPLIES_REPORT_X"
