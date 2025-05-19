@@ -34,5 +34,6 @@ jobs:
       - name: Run Azure CLI script
         run: |
           docker build -t ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }} .
+          docker tag ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }} ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:latest
           az acr login --name ${{ vars.ACR_NAME }}
           docker push ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }}

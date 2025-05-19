@@ -21,6 +21,7 @@ module Cfg =
 
     // env-agnostic
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
+    let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
     let X_BEARER_TOKEN = Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
     let TENANT_ID = Environment.GetEnvironmentVariable "GHIZA_TENANT_ID"
     let CLIENT_ID = Environment.GetEnvironmentVariable "GHIZA_CLIENT_ID"
@@ -42,16 +43,15 @@ module Cfg =
     let TEAMS_SOCIALS_CHANNEL_WEBHOOK = Environment.GetEnvironmentVariable "TEAMS_SOCIALS_CHANNEL_WEBHOOK"
 
 let solutionName = "ghiza"
-let env =
-    let branch =
-        Environment.GetEnvironmentVariable "GITHUB_REF_NAME"
-        // (Environment.GetEnvironmentVariable "GITHUB_REF").Split "/" |> Array.last
-    match branch with
-    | "master"
-    | "main" -> "live"
-    | _ -> "test"
-
-let acrName = ACR_NAME
+let env = ENVIRONMENT.ToLower()
+// let env =
+//     let branch =
+//         Environment.GetEnvironmentVariable "GITHUB_REF_NAME"
+//         // (Environment.GetEnvironmentVariable "GITHUB_REF").Split "/" |> Array.last
+//     match branch with
+//     | "master"
+//     | "main" -> "live"
+//     | _ -> "test"
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
 
@@ -66,7 +66,7 @@ let ai = appInsights {
     
 let container = container {
     name $"{solutionName}-{env}-container"
-    private_docker_image "citregistry.azurecr.io" "ghiza" "latest"
+    private_docker_image ACR_LOGIN_SERVER "ghiza/ghiza" "latest"
     cpu_cores 0.5<VCores>
     memory 1.0<Gb>
 }
@@ -75,7 +75,7 @@ let cApp = containerApp {
     name $"{solutionName}-{env}-app"
     system_identity
     reference_registry_credentials [
-            ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName acrName, "cit-shared")
+            ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
         ]
     add_containers [ container ]
     replicas 1 1 
