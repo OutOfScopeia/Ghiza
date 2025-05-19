@@ -2,6 +2,7 @@
 
 open Farmer
 open Farmer.Arm
+open Farmer.ContainerApp
 open Farmer.Builders
 open System
 open System.IO
@@ -73,12 +74,16 @@ let container = container {
 
 let cApp = containerApp {
     name $"{solutionName}-{env}-app"
+    active_revision_mode ActiveRevisionsMode.Single
+    ingress_state Enabled
+    ingress_target_port 80us
     system_identity
     reference_registry_credentials [
             ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
         ]
     add_containers [ container ]
-    replicas 1 1 
+    replicas 1 1
+    
     add_env_variables [
         "ENVIRONMENT", ENVIRONMENT
         "X_BEARER_TOKEN", X_BEARER_TOKEN
