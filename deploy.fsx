@@ -14,12 +14,15 @@ module Cfg =
     // "APPINSIGHTS_INSTRUMENTATIONKEY" ai.InstrumentationKey.Value
     // "APPLICATIONINSIGHTS_CONNECTION_STRING" "InstrumentationKey=838c35a7-8b49-42f4-bd77-e3296dc8aa38;IngestionEndpoint=https://uksouth-1.in.applicationinsights.azure.com/;LiveEndpoint=https://uksouth.livediagnostics.monitor.azure.com/;ApplicationId=cf1bf99d-e4ce-45bb-80e4-d81789d8c213"
     // "AzureWebJobsStorage"  "AZURE_STORAGE_CONNECTION_STRING"
-    // "FUNCTIONS_WORKER_RUNTIME" "dotnet-isolated"
+    
+    // DefaultEndpointsProtocol=https;AccountName=ghizatest;AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', 'ghizatest'), '2017-10-01').keys[0].value, ';EndpointSuffix=', environment().suffixes.storage)
+    
     // "SCM_DO_BUILD_DURING_DEPLOYMENT" "0"
     // "WEBSITE_RUN_FROM_PACKAGE" "https://citmaintenance.blob.core.windows.net/function-releases/20250417033429-cae111ec29a7f855d6bb8708fc0ecac5.zip?sv=2025-01-05&st=2025-04-17T03%3A29%3A34Z&se=2035-04-17T03%3A34%3A34Z&sr=b&sp=r&sig=UxuZeU6zwkKGkQ1SAMGd%2B8dwabFrYCG2lKrzTHYCtko%3D"
     // "WORKSPACE_ID" "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
+    let FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
     let FUNCTIONS_EXTENSION_VERSION = "~4"
-    let WEBSITES_PORT = "8080"
+    let WEBSITES_PORT = "80"
     // env-agnostic
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
@@ -59,12 +62,16 @@ let sa = storageAccount {
     name $"{solutionName}{env}"
 }
 
-// let deploymentStorage = arm {
-//     location Location.UKSouth
-//     add_resource sa
-// }
+let deploymentStorage = arm {
+    location Location.UKSouth
+    add_resource sa
+    output "storageConnectionString" sa.Key
+}
 
-// let storageConStr = deploymentStorage |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
+let storageConStr =
+    deploymentStorage
+    |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
+    |> fun m -> m["storageConnectionString"]
 
 let law = logAnalytics {
     name $"{solutionName}-{env}-law"
@@ -86,7 +93,8 @@ let cApp = containerApp {
     name $"{solutionName}-{env}-app"
     active_revision_mode ActiveRevisionsMode.Single
     ingress_state Enabled
-    ingress_target_port 80us
+    ingress_target_port (WEBSITES_PORT |> uint16)
+    ingress_transport Transport.Auto
     system_identity
     reference_registry_credentials [
         ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
@@ -95,9 +103,10 @@ let cApp = containerApp {
     replicas 1 1
     
     add_env_variables [
+        "FUNCTIONS_WORKER_RUNTIME", FUNCTIONS_WORKER_RUNTIME
         "FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
         "WEBSITES_PORT", WEBSITES_PORT
-        "AzureWebJobsStorage", sa.Key.Value
+        "AzureWebJobsStorage", storageConStr
 
         "ENVIRONMENT", ENVIRONMENT
         "X_BEARER_TOKEN", X_BEARER_TOKEN
