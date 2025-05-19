@@ -55,6 +55,16 @@ let env = ENVIRONMENT.ToLower()
 //     | _ -> "test"
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
+let sa = storageAccount {
+    name $"{solutionName}-{env}-sa"
+}
+
+// let deploymentStorage = arm {
+//     location Location.UKSouth
+//     add_resource sa
+// }
+
+// let storageConStr = deploymentStorage |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
 
 let law = logAnalytics {
     name $"{solutionName}-{env}-law"
@@ -79,14 +89,15 @@ let cApp = containerApp {
     ingress_target_port 80us
     system_identity
     reference_registry_credentials [
-            ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
-        ]
+        ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
+    ]
     add_containers [ container ]
     replicas 1 1
     
     add_env_variables [
         "FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
         "WEBSITES_PORT", WEBSITES_PORT
+        "AzureWebJobsStorage", sa.Key.Value
 
         "ENVIRONMENT", ENVIRONMENT
         "X_BEARER_TOKEN", X_BEARER_TOKEN
@@ -114,9 +125,9 @@ let cae = containerEnvironment {
     app_insights_instance ai
     add_container cApp
 }
-
 let deployment = arm {
     location Location.UKSouth
+    add_resource sa
     add_resource cae
     add_resource law
     add_resource ai
