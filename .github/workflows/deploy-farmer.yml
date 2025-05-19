@@ -25,9 +25,9 @@ jobs:
       ENVIRONMENT: TEST
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).password }}
       BLUESKY_AT_IDENTIFIER: ${{ vars.BLUESKY_AT_IDENTIFIER }}
       X_HANDLE: ${{ vars.X_HANDLE }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
@@ -75,9 +75,9 @@ jobs:
       ENVIRONMENT: LIVE
       ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).password }}
       BLUESKY_AT_IDENTIFIER: ${{ vars.BLUESKY_AT_IDENTIFIER }}
       X_HANDLE: ${{ vars.X_HANDLE }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
