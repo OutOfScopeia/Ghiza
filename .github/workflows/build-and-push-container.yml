@@ -31,9 +31,11 @@ jobs:
           tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
           subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
-      - name: Run Azure CLI script
+      - name: Build and push Docker image
         run: |
-          docker build -t ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }} .
-          docker tag ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }} ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:latest
+          TAG_BUILD=${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }}
+          TAG_LATEST=${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:latest
+          docker build -t $TAG_BUILD -t $TAG_LATEST .
           az acr login --name ${{ vars.ACR_NAME }}
-          docker push ${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }}
+          docker push $TAG_BUILD
+          docker push $TAG_LATEST
