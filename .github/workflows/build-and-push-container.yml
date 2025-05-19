@@ -24,24 +24,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Login to Azure using OIDC
-        uses: azure/login@v2.3.0
-        with:
-          client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
-          tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
-          subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+      # - name: Login to Azure using OIDC
+      #   uses: azure/login@v2.3.0
+      #   with:
+      #     client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+      #     tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
+      #     subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
       - name: Login to ACR
-        uses: azure/docker-login@v2
+        uses: docker/login-action@v3
         with:
-          login-server: ${{ vars.ACR_LOGIN_SERVER }}
+          registry: ${{ vars.ACR_LOGIN_SERVER }}
+          username: ${{ secrets.AZURE_CONTAINER_REGISTRY_USERNAME }}
+          password: ${{ secrets.AZURE_CONTAINER_REGISTRY_PASSWORD }}
 
       - name: Build and Push Docker image
-        uses: docker/build-push-action@v6.17.0
+        uses: docker/build-push-action@v6
         with:
           push: true
           tags: ${{ env.TAG }}
-
 
       # - name: ACR build
       #   id: acr
