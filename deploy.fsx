@@ -80,6 +80,7 @@ let cApp = containerApp {
     add_containers [ container ]
     replicas 1 1 
     add_env_variables [
+        "ENVIRONMENT", ENVIRONMENT
         "X_BEARER_TOKEN", X_BEARER_TOKEN
         "TENANT_ID", TENANT_ID
         "CLIENT_ID", CLIENT_ID
