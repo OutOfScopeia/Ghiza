@@ -32,7 +32,6 @@ jobs:
           client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
           tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
           subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
-          enable-AzPSSession: true
 
       - name: Login to ACR using Azure CLI
         run: |
