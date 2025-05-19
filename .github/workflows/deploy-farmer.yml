@@ -24,7 +24,7 @@ jobs:
     environment:
       name: TEST
     env:
-      AZURE_CONTAINER_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
       GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
@@ -57,11 +57,11 @@ jobs:
     - name: Verify .NET installation
       run: dotnet --info
 
-    - name: Log in to Azure
-      uses: azure/login@v2.3.0
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
       with:
-        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
         subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
     - name: "Deploy Azure Resources with Farmer script"
@@ -73,7 +73,7 @@ jobs:
     environment:
       name: LIVE
     env:
-      AZURE_CONTAINER_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      ACR_NAME: ${{ vars.ACR_NAME }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
       GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
