@@ -56,7 +56,7 @@ let env = ENVIRONMENT.ToLower()
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
 let sa = storageAccount {
-    name $"{solutionName}-{env}-sa"
+    name $"{solutionName}{env}"
 }
 
 // let deploymentStorage = arm {
