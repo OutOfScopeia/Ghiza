@@ -1,4 +1,4 @@
-name: Build and Push with ACR
+name: Build and Push to ACR (OIDC)
 on:
   push:
     branches:
@@ -11,24 +11,50 @@ on:
       - '.github/workflows/build-and-push-container.yml'
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 env:
   TAG: ${{ github.ref_name }}-${{ github.sha }}
 jobs:
-  build:
+  build-and-push:
     runs-on: ubuntu-latest
-    steps:  
-      - name: ACR build
-        id: acr
-        uses: azure/acr-build@v1
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2.3.0
         with:
-          service_principal: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
-          service_principal_password: ${{ fromJson(secrets.AZURE_CREDENTIALS).password }}
-          tenant: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
-          registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
-          repository: ghiza
-          image: ghiza
-          tag: ${{ env.TAG }}
-          folder: ./
-          dockerfile: ./Dockerfile
-          branch: ${{ github.ref_name }}
-          # git_access_token: ${{ secrets.git_access_token }}
+          client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+          tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
+          subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+
+      - name: Login to ACR
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ vars.ACR_LOGIN_SERVER }}
+
+      - name: Build and Push Docker image
+        uses: docker/build-push-action@v6.17.0
+        with:
+          push: true
+          tags: ${{ env.TAG }}
+
+
+      # - name: ACR build
+      #   id: acr
+      #   uses: azure/acr-build@v1
+      #   with:
+      #     service_principal: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+      #     service_principal_password: ${{ fromJson(secrets.AZURE_CREDENTIALS).password }}
+      #     tenant: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
+      #     registry: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      #     repository: ghiza
+      #     image: ghiza
+      #     tag: ${{ env.TAG }}
+      #     folder: ./
+      #     dockerfile: ./Dockerfile
+      #     branch: ${{ github.ref_name }}
+      #     git_access_token: ${{ secrets.git_access_token }}
