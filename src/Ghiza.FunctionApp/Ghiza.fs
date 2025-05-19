@@ -587,20 +587,20 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-        let lastInvocation = if isRunningLocally then DateTime.UtcNow.AddDays(-5.) else timer.ScheduleStatus.Last
+        let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
 
         let payloadTeams, payloadSlack =
             let titleTemplate = "New replies on"
             match ctx.FunctionDefinition.Name with
             | "RepliesReport_Bluesky" ->
-                let newReplies = (ctx, timer.ScheduleStatus.Last) ||> Bluesky.getNewReplies
+                let newReplies = (ctx, lastInvocation) ||> Bluesky.getNewReplies
                 let title = $"{titleTemplate} Bluesky"
                 newReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
                 newReplies |> Result.map Bluesky.getSlackTableAsBlocks
 
             | "RepliesReport_X" ->
                 let title = $"{titleTemplate} X"
-                let newReplies = (ctx, timer.ScheduleStatus.Last) ||> X.getNewReplies
+                let newReplies = (ctx, lastInvocation) ||> X.getNewReplies
                 newReplies |> Result.map (JsonUtils.getTeamsAdaptiveCardFormat2 title),
                 newReplies |> Result.map X.getSlackTableAsCodeBlock
 
