@@ -1,4 +1,4 @@
-﻿module X
+module X
 open System
 open Newtonsoft.Json
 open System.Net.Http
@@ -8,6 +8,8 @@ open Slack
 open Cfg
 open System.Net.Http.Headers
 open System.Threading.Tasks
+open Microsoft.Azure.Functions.Worker
+open Microsoft.Extensions.Logging
 
     type Author with
         static member fromJson (tkn:Linq.JToken) =
@@ -39,7 +41,9 @@ open System.Threading.Tasks
     //"2/tweets/search/recent?query=to:compositionalit is:reply -is:retweet -from:4842797655&tweet.fields=article,attachments,author_id,card_uri,community_id,context_annotations,conversation_id,created_at,display_text_range,edit_controls,edit_history_tweet_ids,entities,geo,id,in_reply_to_user_id,lang,media_metadata,note_tweet,referenced_tweets,reply_settings,scopes,source,text,withheld"
 
     // search for all tweets that are replies to @compositionalit, are not by @compositionalit and are not retweets
-    let getNewReplies (lastInvocation:DateTime) =
+    let getNewReplies (ctx:FunctionContext) (lastInvocation:DateTime) =
+        let log = ctx.GetLogger<LogPoller>()
+        use _ = log.BeginScope($"{ctx.FunctionDefinition.Name} X.getNewReplies")
         
         // returns a flat collection of all nested replies
         let getReplies (tweetsNode:Linq.JToken) =
@@ -52,9 +56,14 @@ open System.Threading.Tasks
                     //let requestUrl = $"{publicApiUrl}/2/tweets/search/recent?query=to:compositionalit is:reply -is:retweet -from:4842797655&tweet.fields=article,attachments,author_id,card_uri,community_id,context_annotations,conversation_id,created_at,display_text_range,edit_controls,edit_history_tweet_ids,entities,geo,id,in_reply_to_user_id,lang,media_metadata,note_tweet,referenced_tweets,reply_settings,scopes,source,text,withheld"
                     let requestUrl = $"{publicApiUrl}/2/tweets/search/recent?query=to:{xHandle} is:reply -is:retweet -from:4842797655&tweet.fields=article,attachments,author_id,card_uri,community_id,context_annotations,conversation_id,created_at,display_text_range,edit_controls,edit_history_tweet_ids,entities,geo,id,in_reply_to_user_id,note_tweet,referenced_tweets,source,text&expansions=author_id&user.fields=username,profile_image_url"
                     //created_at, id, 
+                    
                     use httpClient = new HttpClient()
                     httpClient.DefaultRequestHeaders.Authorization <- AuthenticationHeaderValue("Bearer", xBearerToken)
+                    
                     let! response = httpClient.GetStringAsync(requestUrl) |> Async.AwaitTask
+                    
+                    //log.LogInformation($"HTTP RESPONSE: '{response}'")
+                    
                     let json = JsonValue.Parse(response)
                     return
                         json
@@ -65,12 +74,18 @@ open System.Threading.Tasks
                         |> fun replies -> if replies |> Seq.isEmpty then Error "No new replies found on X" else Ok replies
                 with
                 | :? InvalidOperationException as ex -> return Error ex.Message
-                | :? HttpRequestException as ex -> return Error ex.Message
                 | :? TaskCanceledException as ex -> return Error ex.Message
                 | :? UriFormatException as ex -> return Error ex.Message
+                | :? AggregateException as ex ->
+                    match ex.InnerException with
+                    | :? HttpRequestException as ex when ex.StatusCode.Value = Net.HttpStatusCode.TooManyRequests -> return Error "X API quota exceeded"
+                    | _ -> return Error ex.Message
+                | :? HttpRequestException as ex when ex.StatusCode.Value = Net.HttpStatusCode.TooManyRequests -> return Error "X API quota exceeded"
+                | :? HttpRequestException as ex -> return Error ex.Message
             }
 
         //let getUsers (tweetsNode:Linq.JToken) = tweetsNode.SelectTokens("$.includes.users[*]") |> List.ofSeq
+
 
         let newReplies = xHandle |> fetchTweets |> Async.RunSynchronously
         

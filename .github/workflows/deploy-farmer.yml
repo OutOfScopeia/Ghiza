@@ -1,14 +1,11 @@
 name: Deploy App With Farmer Script (OIDC)
 
 on:
-  push:
-    branches:
-      - dev
-  workflow_dispatch:
   workflow_run:
-    workflows: ["Build and Deploy to Azure Container Apps"]
+    workflows: ["Build and Push to ACR (OIDC)"]
     types:
       - completed
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -21,14 +18,18 @@ env:
 jobs:
   deploy-test:
     runs-on: ubuntu-latest
+    if: github.ref_name != 'master'
     environment:
       name: TEST
     env:
-      AZURE_CONTAINER_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      ENVIRONMENT: TEST
+      ACR_NAME: ${{ vars.ACR_NAME }}
+      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      WORKSPACE_ID: ${{ vars.WORKSPACE_ID }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).password }}
       BLUESKY_AT_IDENTIFIER: ${{ vars.BLUESKY_AT_IDENTIFIER }}
       X_HANDLE: ${{ vars.X_HANDLE }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
@@ -57,27 +58,30 @@ jobs:
     - name: Verify .NET installation
       run: dotnet --info
 
-    - name: Log in to Azure
-      uses: azure/login@v2.3.0
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
       with:
-        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
         subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
     - name: "Deploy Azure Resources with Farmer script"
       run: dotnet fsi deploy.fsx
 
   deploy-live:
-    needs: [deploy-test]
     runs-on: ubuntu-latest
+    if: github.ref_name == 'master'
     environment:
       name: LIVE
     env:
-      AZURE_CONTAINER_REGISTRY_NAME: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+      ENVIRONMENT: LIVE
+      ACR_NAME: ${{ vars.ACR_NAME }}
+      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      WORKSPACE_ID: ${{ vars.WORKSPACE_ID }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
-      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
-      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).clientId }}
+      GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
+      GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
+      GHIZA_CLIENT_SECRET: ${{ fromJson(secrets.GHIZA_CREDENTIALS).password }}
       BLUESKY_AT_IDENTIFIER: ${{ vars.BLUESKY_AT_IDENTIFIER }}
       X_HANDLE: ${{ vars.X_HANDLE }}
       CRON_CREATED_SERVICE_PRINCIPALS: ${{ vars.CRON_CREATED_SERVICE_PRINCIPALS }}
@@ -106,11 +110,11 @@ jobs:
     - name: Verify .NET installation
       run: dotnet --info
 
-    - name: Log in to Azure
-      uses: azure/login@v2.3.0
+    - name: Login to Azure using OIDC
+      uses: azure/login@v2
       with:
-        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).clientId }}
-        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenantId }}
+        client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+        tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
         subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
     - name: "Deploy Azure Resources with Farmer script"

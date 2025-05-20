@@ -57,8 +57,6 @@ open Microsoft.Extensions.Logging
         let log = ctx.GetLogger<LogPoller>()
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name} BS.getNewReplies")
         
-        // when in local dev env, stretch the lookback window
-        let lastInvocation = if isRunningLocally then DateTime.UtcNow.AddDays(-5.) else lastInvocation
         log.LogTrace($"lastInvocation: {lastInvocation}")
         
         let getThreadReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")

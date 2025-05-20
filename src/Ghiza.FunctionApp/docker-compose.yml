@@ -1,0 +1,6 @@
+services:
+  ghiza:
+    image: ghiza
+    build:
+      context: .
+      dockerfile: ./Dockerfile

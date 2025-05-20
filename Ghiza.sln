@@ -1,9 +1,8 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ghiza", "src\Ghiza.FunctionApp\Ghiza.FunctionApp.fsproj", "{F13B60F8-EC66-4946-B867-72FA114A30E5}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Ghiza.FunctionApp", "src\Ghiza.FunctionApp\Ghiza.FunctionApp.fsproj", "{F13B60F8-EC66-4946-B867-72FA114A30E5}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F14DCF8A-FC2A-4677-AF4D-616AD7DB3470}"
 EndProject
@@ -13,15 +12,29 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.gitignore = .gitignore
 		card-sample-working.json = card-sample-working.json
 		cas-sample.json = cas-sample.json
+		.github\copilot-instructions.md = .github\copilot-instructions.md
+		deploy.fsx = deploy.fsx
 		Dockerfile = Dockerfile
 		global.json = global.json
 		local.settings.example.json = local.settings.example.json
+		local.settings.json = local.settings.json
 		LocalSettings-to-EnvFile.fsx = LocalSettings-to-EnvFile.fsx
 		POST.ps1 = POST.ps1
 		POSTcard.ps1 = POSTcard.ps1
 		readme.txt = readme.txt
 		x-get-tweets.json = x-get-tweets.json
 		x-search-recent-tweets.json = x-search-recent-tweets.json
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.github\copilot-instructions.md = .github\copilot-instructions.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{610CE73B-2CAF-4C82-A7BF-3FEBFA7BC251}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build-and-push-container.yml = .github\workflows\build-and-push-container.yml
+		.github\workflows\deploy-farmer.yml = .github\workflows\deploy-farmer.yml
 	EndProjectSection
 EndProject
 Global
@@ -39,6 +52,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{02EA681E-C7D8-13C7-8484-4AC65E1B71E8} = {937093CA-26FA-4D0C-AAC2-D4B606339FB7}
+		{610CE73B-2CAF-4C82-A7BF-3FEBFA7BC251} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CB1E47FB-ECFE-4459-8559-325D250CE68E}
