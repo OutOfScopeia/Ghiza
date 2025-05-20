@@ -13,13 +13,7 @@ module Cfg =
     // probably not needed
     // "APPINSIGHTS_INSTRUMENTATIONKEY" ai.InstrumentationKey.Value
     // "APPLICATIONINSIGHTS_CONNECTION_STRING" "InstrumentationKey=838c35a7-8b49-42f4-bd77-e3296dc8aa38;IngestionEndpoint=https://uksouth-1.in.applicationinsights.azure.com/;LiveEndpoint=https://uksouth.livediagnostics.monitor.azure.com/;ApplicationId=cf1bf99d-e4ce-45bb-80e4-d81789d8c213"
-    // "AzureWebJobsStorage"  "AZURE_STORAGE_CONNECTION_STRING"
     
-    // DefaultEndpointsProtocol=https;AccountName=ghizatest;AccountKey=', listKeys(resourceId('Microsoft.Storage/storageAccounts', 'ghizatest'), '2017-10-01').keys[0].value, ';EndpointSuffix=', environment().suffixes.storage)
-    
-    // "SCM_DO_BUILD_DURING_DEPLOYMENT" "0"
-    // "WEBSITE_RUN_FROM_PACKAGE" "https://citmaintenance.blob.core.windows.net/function-releases/20250417033429-cae111ec29a7f855d6bb8708fc0ecac5.zip?sv=2025-01-05&st=2025-04-17T03%3A29%3A34Z&se=2035-04-17T03%3A34%3A34Z&sr=b&sp=r&sig=UxuZeU6zwkKGkQ1SAMGd%2B8dwabFrYCG2lKrzTHYCtko%3D"
-    // "WORKSPACE_ID" "ebef7024-4ce7-431a-ae6e-045680b8f8e4"
     let FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
     let FUNCTIONS_EXTENSION_VERSION = "~4"
     let WEBSITES_PORT = "80"
@@ -27,6 +21,7 @@ module Cfg =
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
     let X_BEARER_TOKEN = Environment.GetEnvironmentVariable "X_BEARER_TOKEN"
+    let WORKSPACE_ID = Environment.GetEnvironmentVariable "WORKSPACE_ID"
     let TENANT_ID = Environment.GetEnvironmentVariable "GHIZA_TENANT_ID"
     let CLIENT_ID = Environment.GetEnvironmentVariable "GHIZA_CLIENT_ID"
     let CLIENT_SECRET = Environment.GetEnvironmentVariable "GHIZA_CLIENT_SECRET"
@@ -58,20 +53,9 @@ let env = ENVIRONMENT.ToLower()
 //     | _ -> "test"
 
 //let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
-let sa = storageAccount {
+let sa: StorageAccountConfig = storageAccount {
     name $"{solutionName}{env}"
 }
-
-let deploymentStorage = arm {
-    location Location.UKSouth
-    add_resource sa
-    output "storageConnectionString" sa.Key
-}
-
-let storageConStr =
-    deploymentStorage
-    |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
-    |> fun m -> m["storageConnectionString"]
 
 let law = logAnalytics {
     name $"{solutionName}-{env}-law"
@@ -81,6 +65,24 @@ let ai = appInsights {
     name $"{solutionName}-{env}-ai"
     log_analytics_workspace law
 }
+
+let deploymentStorage = arm {
+    location Location.UKSouth
+    add_resources [
+        sa
+        law
+        ai
+    ]
+    outputs [
+        "storageConnectionString", sa.Key
+        "aiConnectionString", ai.ConnectionString
+    ]
+}
+
+let storageConnectionString, aiConnectionString =
+    deploymentStorage
+    |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters
+    |> fun m -> m["storageConnectionString"], m["aiConnectionString"]
     
 let container = container {
     name $"{solutionName}-{env}-container"
@@ -103,12 +105,16 @@ let cApp = containerApp {
     replicas 1 1
     
     add_env_variables [
+        // 'platform' settings
         "FUNCTIONS_WORKER_RUNTIME", FUNCTIONS_WORKER_RUNTIME
         "FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
         "WEBSITES_PORT", WEBSITES_PORT
-        "AzureWebJobsStorage", storageConStr
-
+        "AzureWebJobsStorage", storageConnectionString
+        "APPLICATIONINSIGHTS_CONNECTION_STRING", aiConnectionString
+        // test/live - for deployment
         "ENVIRONMENT", ENVIRONMENT
+        // app's settings
+        "WORKSPACE_ID", WORKSPACE_ID
         "X_BEARER_TOKEN", X_BEARER_TOKEN
         "TENANT_ID", TENANT_ID
         "CLIENT_ID", CLIENT_ID
@@ -136,10 +142,7 @@ let cae = containerEnvironment {
 }
 let deployment = arm {
     location Location.UKSouth
-    add_resource sa
     add_resource cae
-    add_resource law
-    add_resource ai
 }
 
 deployment |> Deploy.execute $"{solutionName}-{env}" Deploy.NoParameters

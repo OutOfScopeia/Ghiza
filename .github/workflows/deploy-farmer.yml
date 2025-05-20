@@ -25,6 +25,7 @@ jobs:
       ENVIRONMENT: TEST
       ACR_NAME: ${{ vars.ACR_NAME }}
       ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      WORKSPACE_ID: ${{ vars.WORKSPACE_ID }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
       GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
@@ -76,6 +77,7 @@ jobs:
       ENVIRONMENT: LIVE
       ACR_NAME: ${{ vars.ACR_NAME }}
       ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      WORKSPACE_ID: ${{ vars.WORKSPACE_ID }}
       X_BEARER_TOKEN: ${{ secrets.X_BEARER_TOKEN }}
       GHIZA_TENANT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).tenant }}
       GHIZA_CLIENT_ID: ${{ fromJson(secrets.GHIZA_CREDENTIALS).appId }}
