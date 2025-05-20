@@ -9,8 +9,3 @@ FROM mcr.microsoft.com/azure-functions/dotnet-isolated:4-dotnet-isolated9.0
 ENV AzureWebJobsScriptRoot=/home/site/wwwroot \
     AzureFunctionsJobHost__Logging__Console__IsEnabled=true
 COPY --from=installer-env ["/home/site/wwwroot", "/home/site/wwwroot"]
-
-# debug
-EXPOSE 80
-EXPOSE 8080
-EXPOSE 443

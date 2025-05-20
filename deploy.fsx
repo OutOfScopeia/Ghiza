@@ -16,7 +16,7 @@ module Cfg =
     
     let FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
     let FUNCTIONS_EXTENSION_VERSION = "~4"
-    let WEBSITES_PORT = "80"
+    //let WEBSITES_PORT = "80"
     // env-agnostic
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
@@ -52,7 +52,6 @@ let env = ENVIRONMENT.ToLower()
 //     | "main" -> "live"
 //     | _ -> "test"
 
-//let storageAccount = ResourceId.create(ResourceType ("StorageAccounts", "2024-01-01"), ResourceName "citmaintenance")
 let sa: StorageAccountConfig = storageAccount {
     name $"{solutionName}{env}"
 }
@@ -87,16 +86,13 @@ let storageConnectionString, aiConnectionString =
 let container = container {
     name $"{solutionName}-{env}-container"
     private_docker_image ACR_LOGIN_SERVER "ghiza/ghiza" "latest"
-    cpu_cores 0.5<VCores>
+    cpu_cores 0.25<VCores>
     memory 1.0<Gb>
 }
 
 let cApp = containerApp {
     name $"{solutionName}-{env}-app"
     active_revision_mode ActiveRevisionsMode.Single
-    ingress_state Enabled
-    ingress_target_port (WEBSITES_PORT |> uint16)
-    ingress_transport Transport.Auto
     system_identity
     reference_registry_credentials [
         ResourceId.create (Arm.ContainerRegistry.registries, ResourceName.ResourceName ACR_NAME, "cit-shared")
@@ -106,9 +102,8 @@ let cApp = containerApp {
     
     add_env_variables [
         // 'platform' settings
-        "FUNCTIONS_WORKER_RUNTIME", FUNCTIONS_WORKER_RUNTIME
-        "FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
-        "WEBSITES_PORT", WEBSITES_PORT
+        //"FUNCTIONS_WORKER_RUNTIME", FUNCTIONS_WORKER_RUNTIME
+        //"FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
         "AzureWebJobsStorage", storageConnectionString
         "APPLICATIONINSIGHTS_CONNECTION_STRING", aiConnectionString
         // test/live - for deployment
