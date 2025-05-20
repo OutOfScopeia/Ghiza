@@ -1,22 +1,12 @@
 #r "nuget: Farmer"
-
 open Farmer
 open Farmer.Arm
 open Farmer.ContainerApp
 open Farmer.Builders
 open System
-open System.IO
-open System.Text.Json
 
 [<AutoOpen>]
 module Cfg =
-    // probably not needed
-    // "APPINSIGHTS_INSTRUMENTATIONKEY" ai.InstrumentationKey.Value
-    // "APPLICATIONINSIGHTS_CONNECTION_STRING" "InstrumentationKey=838c35a7-8b49-42f4-bd77-e3296dc8aa38;IngestionEndpoint=https://uksouth-1.in.applicationinsights.azure.com/;LiveEndpoint=https://uksouth.livediagnostics.monitor.azure.com/;ApplicationId=cf1bf99d-e4ce-45bb-80e4-d81789d8c213"
-    
-    let FUNCTIONS_WORKER_RUNTIME = "dotnet-isolated"
-    let FUNCTIONS_EXTENSION_VERSION = "~4"
-    //let WEBSITES_PORT = "80"
     // env-agnostic
     let ACR_NAME = Environment.GetEnvironmentVariable "ACR_NAME"
     let ACR_LOGIN_SERVER = Environment.GetEnvironmentVariable "ACR_LOGIN_SERVER"
@@ -43,14 +33,6 @@ module Cfg =
 
 let solutionName = "ghiza"
 let env = ENVIRONMENT.ToLower()
-// let env =
-//     let branch =
-//         Environment.GetEnvironmentVariable "GITHUB_REF_NAME"
-//         // (Environment.GetEnvironmentVariable "GITHUB_REF").Split "/" |> Array.last
-//     match branch with
-//     | "master"
-//     | "main" -> "live"
-//     | _ -> "test"
 
 let sa: StorageAccountConfig = storageAccount {
     name $"{solutionName}{env}"
@@ -102,13 +84,11 @@ let cApp = containerApp {
     
     add_env_variables [
         // 'platform' settings
-        //"FUNCTIONS_WORKER_RUNTIME", FUNCTIONS_WORKER_RUNTIME
-        //"FUNCTIONS_EXTENSION_VERSION", FUNCTIONS_EXTENSION_VERSION
         "AzureWebJobsStorage", storageConnectionString
         "APPLICATIONINSIGHTS_CONNECTION_STRING", aiConnectionString
         // test/live - for deployment
         "ENVIRONMENT", ENVIRONMENT
-        // app's settings
+        // apps settings
         "WORKSPACE_ID", WORKSPACE_ID
         "X_BEARER_TOKEN", X_BEARER_TOKEN
         "TENANT_ID", TENANT_ID

@@ -33,7 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{02EA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{610CE73B-2CAF-4C82-A7BF-3FEBFA7BC251}"
 	ProjectSection(SolutionItems) = preProject
-		.github\workflows\azure.yml = .github\workflows\azure.yml
+		.github\workflows\build-and-push-container.yml = .github\workflows\build-and-push-container.yml
+		.github\workflows\deploy-farmer.yml = .github\workflows\deploy-farmer.yml
 	EndProjectSection
 EndProject
 Global

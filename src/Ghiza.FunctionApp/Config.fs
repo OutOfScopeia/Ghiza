@@ -8,6 +8,7 @@ open Microsoft.Graph
 let isTestEnvironment =
     let isRunningLocally = String.IsNullOrEmpty(Environment.GetEnvironmentVariable "WEBSITE_INSTANCE_ID") // if not running in the cloud
     if isRunningLocally || Environment.GetEnvironmentVariable "ENVIRONMENT" = "TEST" then true else false
+
 let lookbackMinutesSignIns = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SIGNINS"
 let lookbackMinutesSPCreations = Environment.GetEnvironmentVariable "LOOKBACK_MINUTES_SPCREATIONS"
 let tenantId = Environment.GetEnvironmentVariable "TENANT_ID"
