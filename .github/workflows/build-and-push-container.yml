@@ -17,8 +17,10 @@ permissions:
 
 env:
   TAG: ${{ github.ref_name }}-${{ github.sha }}
+
 jobs:
-  build-and-push:
+  build-and-push-test:
+    if: ${{ (github.ref_name != 'master') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -31,10 +33,33 @@ jobs:
           tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
           subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
-      - name: Build and push Docker image
+      - name: Build and push Docker image (test)
         run: |
-          TAG_BUILD=${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:${{ env.TAG }}
-          TAG_LATEST=${{ vars.ACR_LOGIN_SERVER }}/ghiza/ghiza:latest
+          TAG_BUILD=${{ vars.ACR_LOGIN_SERVER }}/ghiza/test:${{ env.TAG }}
+          TAG_LATEST=${{ vars.ACR_LOGIN_SERVER }}/ghiza/test:latest
+          docker build -t $TAG_BUILD -t $TAG_LATEST .
+          az acr login --name ${{ vars.ACR_NAME }}
+          docker push $TAG_BUILD
+          docker push $TAG_LATEST
+
+  build-and-push-live:
+    if: ${{ (github.ref_name == 'master') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to Azure using OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).appId }}
+          tenant-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).tenant }}
+          subscription-id: ${{ fromJson(secrets.AZURE_CREDENTIALS).subscriptionId }}
+
+      - name: Build and push Docker image (live)
+        run: |
+          TAG_BUILD=${{ vars.ACR_LOGIN_SERVER }}/ghiza/live:${{ env.TAG }}
+          TAG_LATEST=${{ vars.ACR_LOGIN_SERVER }}/ghiza/live:latest
           docker build -t $TAG_BUILD -t $TAG_LATEST .
           az acr login --name ${{ vars.ACR_NAME }}
           docker push $TAG_BUILD
