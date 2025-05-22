@@ -67,7 +67,7 @@ let storageConnectionString, aiConnectionString =
     
 let container = container {
     name $"{solutionName}-{env}-container"
-    private_docker_image ACR_LOGIN_SERVER "ghiza/ghiza" "latest"
+    private_docker_image ACR_LOGIN_SERVER $"{solutionName}/{env}" "latest"
     cpu_cores 0.5<VCores>
     memory 1.0<Gb>
 }
