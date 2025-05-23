@@ -587,10 +587,11 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-        let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
+        //let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
+        let lastInvocation = timer.ScheduleStatus.Last
 
 
-        log.LogInformation($"lastInvocation (test-tweaked: {lastInvocation}")
+        log.LogInformation($"lastInvocation (test-tweaked): {lastInvocation}")
         log.LogInformation($"lastInvocation: {timer.ScheduleStatus.Last}")
         log.LogInformation($"NextInvocation: {timer.ScheduleStatus.Next}")
 
@@ -738,5 +739,5 @@ let staleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] 
 [<Function("RepliesReport_Bluesky")>]
 let repliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportBluesky timer ctx
 
-[<Function("RepliesReport_X")>]
-let repliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportX timer ctx
+//[<Function("RepliesReport_X")>]
+//let repliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportX timer ctx

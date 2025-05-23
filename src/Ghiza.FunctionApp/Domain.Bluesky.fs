@@ -95,7 +95,10 @@ open Microsoft.Extensions.Logging
                         |> Seq.ofArray
                         |> Seq.collect getThreadReplies
                         |> Seq.map Reply.fromJson
+                        //|> Seq.map (fun (r:Reply) -> { r with Text = r.CreatedAtUtc.ToString() + "_" + r.Text })
+                        |> Seq.mapi (fun i (r:Reply) -> log.LogInformation($"{env}: REPLY {i} (PRE-F): {r.CreatedAtUtc.ToString()} _ {r.Text}"); r)
                         |> Seq.filter (fun r -> r.CreatedAtUtc >= lastInvocation)
+                        |> Seq.mapi (fun i (r:Reply) -> log.LogInformation($"{env}: REPLY {i} (POS-F): {r.CreatedAtUtc.ToString()} _ {r.Text}"); r)
                         |> Seq.filter (fun r -> r.Author.Id <> blueskyDid)
                         |> Seq.sortBy (fun r -> r.RootPostUrl)
                         |> fun replies ->
