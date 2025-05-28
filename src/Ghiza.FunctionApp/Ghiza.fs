@@ -588,7 +588,6 @@ module SocialsReport =
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
         let lastInvocation = if isTestEnv then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
-        let lastInvocation = timer.ScheduleStatus.Last
         
         //log.LogInformation($"ENVIRONMENT: {env}")
         //log.LogInformation($"isTestEnv:   {isTestEnv}")
