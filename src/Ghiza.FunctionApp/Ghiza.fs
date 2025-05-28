@@ -589,8 +589,12 @@ module SocialsReport =
 
         //let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
         let lastInvocation = timer.ScheduleStatus.Last
-
-
+        
+        log.LogInformation($"ENVIRONMENT:       {env}")
+        log.LogInformation($"isRunningLocally:  {isRunningLocally}")
+        log.LogInformation($"isTestEnvironment: {env}")
+        
+        
         log.LogInformation($"lastInvocation (test-tweaked): {lastInvocation}")
         log.LogInformation($"lastInvocation: {timer.ScheduleStatus.Last}")
         log.LogInformation($"NextInvocation: {timer.ScheduleStatus.Next}")
