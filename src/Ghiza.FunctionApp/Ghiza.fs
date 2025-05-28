@@ -538,7 +538,7 @@ module Funcs =
             
             match response.IsSuccessStatusCode with
             | true ->
-                log.LogInformation ("Successfully posted message to webhook.")
+                log.LogInformation ("Successfully posted message to webhook")
                 return Ok ()
             | false ->
                 let errorMsg = $"Failed to post message over hook. Status code: {response.StatusCode}"
@@ -564,8 +564,8 @@ module Funcs =
                 |> Async.RunSynchronously
                 
             match results |> Array.exists(fun r -> r.IsError) with
-            | true -> Error "Some POST operations failed."
-            | false -> Ok "All POST operations succeeded."
+            | true -> Error "Some POST operations failed"
+            | false -> Ok "All POST operations succeeded"
         
         | Error data -> Error data.Message
 
@@ -587,16 +587,15 @@ module SocialsReport =
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name}")
         log.LogInformation($"F# Timer trigger function '{ctx.FunctionDefinition.Name}' fired at: {timer.ScheduleStatus.LastUpdated}")
 
-        //let lastInvocation = if Cfg.isTestEnvironment then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
+        let lastInvocation = if isTestEnv then DateTime.UtcNow.AddDays(-14.) else timer.ScheduleStatus.Last
         let lastInvocation = timer.ScheduleStatus.Last
         
-        log.LogInformation($"ENVIRONMENT: {env}")
-        log.LogInformation($"isTestEnv:   {isTestEnv}")
+        //log.LogInformation($"ENVIRONMENT: {env}")
+        //log.LogInformation($"isTestEnv:   {isTestEnv}")
         
-        
-        log.LogInformation($"lastInvocation (test-tweaked): {lastInvocation}")
-        log.LogInformation($"lastInvocation: {timer.ScheduleStatus.Last}")
-        log.LogInformation($"NextInvocation: {timer.ScheduleStatus.Next}")
+        //log.LogInformation($"lastInvocation (test-tweaked): {lastInvocation}")
+        //log.LogInformation($"lastInvocation: {timer.ScheduleStatus.Last}")
+        //log.LogInformation($"NextInvocation: {timer.ScheduleStatus.Next}")
 
         let payloadTeams, payloadSlack =
             let titleTemplate = "New replies on"
@@ -614,7 +613,7 @@ module SocialsReport =
                 newReplies |> Result.map X.getSlackTableAsCodeBlock
 
             | _ ->
-                failwith "Failed to determine function name from context."
+                failwith "Failed to determine function name from context"
 
         [
             payloadTeams |> Result.bind (fun pl -> Funcs.postToWebhook log teamsSocialAlertsWebhook pl |> Async.RunSynchronously) |> Result.mapError (fun e -> log.LogError e)
@@ -624,8 +623,8 @@ module SocialsReport =
         |> List.partition (fun r -> r.IsOk)
         |> fun (oks, errors) ->
             match errors.IsEmpty with
-            | true -> Ok "All POST operations succeeded."
-            | false -> Error "Some POST operations failed."
+            | true -> Ok "All POST operations succeeded"
+            | false -> Error "Some POST operations failed"
 
 
 module Run =
@@ -681,7 +680,7 @@ module Run =
                 let result =
                     match body |> Payload.Essentials.FromCommonAlertSchema with
                     | Ok es ->
-                        log.LogInformation("Successfully parsed incoming payload." |> logPrefix)
+                        log.LogInformation("Successfully parsed incoming payload" |> logPrefix)
                         Ok es
                     | Error e ->
                         Error e
@@ -742,5 +741,5 @@ let staleServicePrincipals ([<TimerTrigger("%CRON_STALE_SERVICE_PRINCIPALS%")>] 
 [<Function("RepliesReport_Bluesky")>]
 let repliesReportBluesky ([<TimerTrigger("%CRON_REPLIES_REPORT_BLUESKY%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportBluesky timer ctx
 
-//[<Function("RepliesReport_X")>]
-//let repliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportX timer ctx
+[<Function("RepliesReport_X")>]
+let repliesReportX ([<TimerTrigger("%CRON_REPLIES_REPORT_X%")>] timer: TimerInfo, ctx: FunctionContext) = Run.repliesReportX timer ctx

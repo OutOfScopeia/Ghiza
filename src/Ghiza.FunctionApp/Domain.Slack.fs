@@ -56,7 +56,7 @@
             | JustText      _ -> failwith "Illegal operation"
 
         override x.ToString() =
-            let invalid = """{"message":"Invalid Block Kit construct."}""" 
+            let invalid = """{"message":"Invalid Block Kit construct"}""" 
             
             match x with 
             | Text (ttype, txt) ->
