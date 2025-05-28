@@ -42,12 +42,11 @@ open Microsoft.Extensions.Logging
                 CreatedAtUtc = DateTime.Parse((tkn.SelectToken("$.post.record.createdAt").ToString()), null, Globalization.DateTimeStyles.RoundtripKind)
                 Text = tkn.SelectToken("$.post.record.text").ToString()
             }
-
                                    // <https://google.com|this is a link>
-        member x.HandleAsRootLink = $"<{x.RootPostUrl}|{x.Author.Handle}>"
-        member x.NameAsRootLink   = $"<{x.RootPostUrl}|{x.Author.Name}>"
+        member x.HandleAsRootLink  = $"<{x.RootPostUrl}|{x.Author.Handle}>"
+        member x.NameAsRootLink    = $"<{x.RootPostUrl}|{x.Author.Name}>"
         member x.HandleAsReplyLink = $"<{x.ReplyPostUrl}|{x.Author.Handle}>"
-        member x.NameAsReplyLink  = $"<{x.ReplyPostUrl}|{x.Author.Name}>"
+        member x.NameAsReplyLink   = $"<{x.ReplyPostUrl}|{x.Author.Name}>"
 
     let publicApiBaseUrl = "https://public.api.bsky.app"
     let platformName = "Bluesky"
@@ -57,7 +56,7 @@ open Microsoft.Extensions.Logging
         let log = ctx.GetLogger<LogPoller>()
         use _ = log.BeginScope($"{ctx.FunctionDefinition.Name} BS.getNewReplies")
         
-        log.LogTrace($"lastInvocation: {lastInvocation}")
+        log.LogInformation($"lastInvocation: {lastInvocation}")
         
         let getThreadReplies (thread:Linq.JToken) = thread.SelectTokens("$.thread..replies[*]")
 
@@ -101,10 +100,10 @@ open Microsoft.Extensions.Logging
                         |> fun replies ->
                             if replies |> Seq.isEmpty
                                 then
-                                    log.LogTrace($"No new replies found on Bluesky")
+                                    log.LogInformation($"No new replies found on Bluesky")
                                     Error "No new replies found on Bluesky"
                                 else
-                                    log.LogTrace($"Replies count: {replies |> Seq.length}")
+                                    log.LogInformation($"Replies count: {replies |> Seq.length}")
                                     Ok replies
                 with
                 | :? InvalidOperationException as ex -> return Error ex.Message
