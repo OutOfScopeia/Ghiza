@@ -18,7 +18,7 @@ env:
 jobs:
   deploy-test:
     runs-on: ubuntu-latest
-    if: github.ref_name != 'master'
+    if: (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch != 'master') || (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.head_branch != 'master' && github.event.workflow_run.conclusion == 'success')
     environment:
       name: TEST
     env:
@@ -73,7 +73,7 @@ jobs:
 
   deploy-live:
     runs-on: ubuntu-latest
-    if: github.ref_name == 'master'
+    if: (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'master') || (github.event.workflow_run.event == 'workflow_run' && github.event.workflow_run.head_branch == 'master' && github.event.workflow_run.conclusion == 'success')
     environment:
       name: LIVE
     env:
