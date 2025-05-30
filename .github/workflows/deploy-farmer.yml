@@ -47,6 +47,9 @@ jobs:
     - name: Dump all environment variables
       run: env
 
+    - name: Dump some more vars
+      run: echo ${{ github.event.workflow_run.head_branch }}
+
     - name: Checkout repository
       uses: actions/checkout@v4
 
@@ -98,6 +101,9 @@ jobs:
     steps:
     - name: Dump all environment variables
       run: env
+
+    - name: Dump some more vars
+      run: echo ${{ github.event.workflow_run.head_branch }}
 
     - name: Checkout repository
       uses: actions/checkout@v4
