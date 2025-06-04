@@ -721,7 +721,7 @@ module Run =
         runAsync getOutgoingPayloadTeams req
         |> Async.RunSynchronously
  
-
+  
 [<Function("AzureAlert")>]
 let azureAlert ([<HttpTrigger>] req: HttpRequestData) (ctx: FunctionContext) = Run.azureAlert req ctx
 
