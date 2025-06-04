@@ -690,7 +690,7 @@ module Run =
         let getOutgoingPayloadTeams (e:Payload.Essentials) =
             let payload = $"ALERT: {e.firedDateTime} - {e.alertRule} - {e.description} - {e.monitorCondition}"
             $"{{\"text\":\"{payload}\"}}"
-    
+
 
         log.LogInformation(sprintf $"F# HttpTrigger function '{ctx.FunctionDefinition.Name}' fired at: {DateTime.Now}" |> logPrefix)
 
